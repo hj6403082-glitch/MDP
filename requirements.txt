@@ -1,0 +1,9 @@
+# Phase 1 (Data Ingestion & K-means Clustering)
+pyspark==3.5.3
+
+# Later phases (declared now so the Dataproc image is provisioned once):
+# Phase 2 - predictive baseline + causal discovery
+xgboost==2.1.1
+lingam==1.9.0
+# Phase 3 - multi-objective optimization
+optuna==4.0.0
