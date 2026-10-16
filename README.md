@@ -166,5 +166,5 @@ cite the paper — fill in the entry below once published:
 
 ## License
 
-Add a license file before publishing (e.g. MIT or Apache-2.0) so downstream use
-is unambiguous. No license is bundled yet.
+Released under the [MIT License](LICENSE). Update the copyright line in
+`LICENSE` to your preferred attribution before publishing.
