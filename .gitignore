@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Optuna SQLite study DB (regenerated per run)
+db.sqlite3
+*.sqlite3
+
+# SHAP / plots
+shap_summary.png
+
+# Spark
+spark-warehouse/
+metastore_db/
