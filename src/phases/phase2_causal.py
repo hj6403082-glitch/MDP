@@ -201,10 +201,16 @@ def extract_dag_and_sem(adjacency, columns: List[str], causal_order: List[int],
     return edges, sems
 
 
-def run_causal_discovery(config: Optional[PipelineConfig] = None) -> Dict:
-    """Run Phase 2b end-to-end and persist the DAG + SEM artefacts."""
+def run_causal_discovery(config: Optional[PipelineConfig] = None, spark=None) -> Dict:
+    """Run Phase 2b end-to-end and persist the DAG + SEM artefacts.
+
+    Pass an existing ``spark`` session to share one across phases; when omitted
+    this function creates and stops its own.
+    """
     cfg = config or load_config()
-    spark = build_spark_session(cfg.spark)
+    owns_spark = spark is None
+    if spark is None:
+        spark = build_spark_session(cfg.spark)
 
     try:
         df = ingest_telemetry(spark, cfg.ingestion)
@@ -246,7 +252,8 @@ def run_causal_discovery(config: Optional[PipelineConfig] = None) -> Dict:
         logger.info("Phase 2b artefacts written under %s", base)
         return result
     finally:
-        spark.stop()
+        if owns_spark:
+            spark.stop()
 
 
 if __name__ == "__main__":

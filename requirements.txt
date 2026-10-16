@@ -1,11 +1,32 @@
-# Phase 1 (Data Ingestion & K-means Clustering)
+# ---------------------------------------------------------------------------
+# MDP - Causal AI for Air Pollution: pinned dependencies.
+#
+# Targets Python 3.10/3.11 as shipped on recent Google Cloud Dataproc images.
+# On Dataproc, install cluster-wide at creation time, e.g.:
+#   gcloud dataproc clusters create ... \
+#     --metadata 'PIP_PACKAGES=-r requirements.txt' \
+#     --initialization-actions gs://goog-dataproc-initialization-actions-<region>/python/pip-install.sh
+# or `pip install -r requirements.txt` inside a PySpark virtualenv / conda env.
+# ---------------------------------------------------------------------------
+
+# --- Core distributed engine (Phase 1-3) ---
 pyspark==3.5.3
 
-# Later phases (declared now so the Dataproc image is provisioned once):
-# Phase 2 - predictive baseline + causal discovery
-xgboost==2.1.1
-lingam==1.9.0
-# Phase 3 - multi-objective optimization + explainability (XAI)
-optuna==4.0.0
+# --- Numerics / IO shared across phases ---
+numpy==1.26.4
+pandas==2.2.2
+pyarrow==16.1.0          # required for Spark<->pandas Arrow conversions
+
+# --- Phase 2a: distributed predictive baseline ---
+xgboost==2.1.1           # provides xgboost.spark.SparkXGBRegressor
+
+# --- Phase 2b: causal discovery ---
+lingam==1.9.0            # DirectLiNGAM
+scikit-learn==1.5.1      # required by lingam (and shap)
+
+# --- Phase 3a: multi-objective optimization ---
+optuna==4.0.0            # NSGAIISampler + relational-DB study backend
+
+# --- Phase 3b: explainability (XAI) ---
 shap==0.46.0
-matplotlib==3.9.2
+matplotlib==3.9.2        # headless (Agg) rendering of the SHAP summary plot

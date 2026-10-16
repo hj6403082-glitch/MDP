@@ -326,13 +326,17 @@ def write_outputs(spark, assignments, correlation_rows, fractions, metrics,
 # --------------------------------------------------------------------------- #
 # Orchestration
 # --------------------------------------------------------------------------- #
-def run_phase1(config: Optional[PipelineConfig] = None) -> Dict:
+def run_phase1(config: Optional[PipelineConfig] = None, spark=None) -> Dict:
     """Run the full Phase-1 pipeline and return the metrics dict.
 
-    This is the function a Dataproc submit (or an orchestrator) calls.
+    This is the function a Dataproc submit (or an orchestrator) calls. Pass an
+    existing ``spark`` session (as ``main.py`` does) to share one session across
+    phases; when omitted this function creates and stops its own.
     """
     cfg = config or load_config()
-    spark = build_spark_session(cfg.spark)
+    owns_spark = spark is None
+    if spark is None:
+        spark = build_spark_session(cfg.spark)
 
     try:
         df = ingest_telemetry(spark, cfg.ingestion)
@@ -364,7 +368,8 @@ def run_phase1(config: Optional[PipelineConfig] = None) -> Dict:
         )
         return metrics
     finally:
-        spark.stop()
+        if owns_spark:
+            spark.stop()
 
 
 if __name__ == "__main__":

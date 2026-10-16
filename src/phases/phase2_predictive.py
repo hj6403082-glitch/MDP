@@ -133,10 +133,16 @@ def evaluate(predictions) -> Dict[str, float]:
     return {"rmse": _metric("rmse"), "mae": _metric("mae"), "r2": _metric("r2")}
 
 
-def run_predictive_baseline(config: Optional[PipelineConfig] = None) -> Dict:
-    """Train and evaluate the distributed XGBoost baseline; persist model+metrics."""
+def run_predictive_baseline(config: Optional[PipelineConfig] = None, spark=None) -> Dict:
+    """Train and evaluate the distributed XGBoost baseline; persist model+metrics.
+
+    Pass an existing ``spark`` session to share one across phases; when omitted
+    this function creates and stops its own.
+    """
     cfg = config or load_config()
-    spark = build_spark_session(cfg.spark)
+    owns_spark = spark is None
+    if spark is None:
+        spark = build_spark_session(cfg.spark)
     from pyspark import StorageLevel
 
     try:
@@ -181,7 +187,8 @@ def run_predictive_baseline(config: Optional[PipelineConfig] = None) -> Dict:
         logger.info("Phase 2a artefacts written under %s", base)
         return metrics
     finally:
-        spark.stop()
+        if owns_spark:
+            spark.stop()
 
 
 if __name__ == "__main__":

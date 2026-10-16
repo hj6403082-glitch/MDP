@@ -194,12 +194,17 @@ def create_study(opt: OptimizationConfig):
     )
 
 
-def run_optimization(config: Optional[PipelineConfig] = None) -> Dict:
+def run_optimization(config: Optional[PipelineConfig] = None, spark=None) -> Dict:
     """Run the distributed multi-objective optimization and persist the Pareto
     front.
+
+    Pass an existing ``spark`` session to share one across phases; when omitted
+    this function creates and stops its own.
     """
     cfg = config or load_config()
-    spark = build_spark_session(cfg.spark)
+    owns_spark = spark is None
+    if spark is None:
+        spark = build_spark_session(cfg.spark)
     opt = cfg.optimization
 
     try:
@@ -274,7 +279,8 @@ def run_optimization(config: Optional[PipelineConfig] = None) -> Dict:
             "storage": storage_url,
         }
     finally:
-        spark.stop()
+        if owns_spark:
+            spark.stop()
 
 
 if __name__ == "__main__":

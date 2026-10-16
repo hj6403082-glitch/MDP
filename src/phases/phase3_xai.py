@@ -129,12 +129,17 @@ def mean_abs_importance(shap_values, features: List[str]) -> List[Dict]:
     return ranked
 
 
-def run_xai(config: Optional[PipelineConfig] = None) -> Dict:
+def run_xai(config: Optional[PipelineConfig] = None, spark=None) -> Dict:
     """Run Phase 3b end-to-end: load model, explain a bounded sample, save the
     plot and the importance table.
+
+    Pass an existing ``spark`` session to share one across phases; when omitted
+    this function creates and stops its own.
     """
     cfg = config or load_config()
-    spark = build_spark_session(cfg.spark)
+    owns_spark = spark is None
+    if spark is None:
+        spark = build_spark_session(cfg.spark)
 
     try:
         df = ingest_telemetry(spark, cfg.ingestion)
@@ -161,7 +166,8 @@ def run_xai(config: Optional[PipelineConfig] = None) -> Dict:
             "importance": importance,
         }
     finally:
-        spark.stop()
+        if owns_spark:
+            spark.stop()
 
 
 if __name__ == "__main__":
