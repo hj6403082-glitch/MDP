@@ -168,6 +168,71 @@ class CausalConfig:
 
 
 @dataclass(frozen=True)
+class OptimizationConfig:
+    """Phase 3 - multi-objective policy optimization with Optuna NSGA-II.
+
+    We search over emission-reduction *interventions* on the primary pollutants
+    and evaluate each candidate by propagating it through the Phase 2b causal
+    SEM, reading off the resulting Ozone and PM2.5. NSGA-II returns the Pareto
+    front of interventions that trade the two pollutants off against each other
+    (the VOC-/NOx-limited ozone regimes make this a genuine trade-off, not a
+    trivial "reduce everything").
+    """
+
+    # Relational storage backend. A shared RDBMS lets every Spark worker fetch
+    # parameters and report trial results into ONE study, so trials run in
+    # parallel across the cluster. SQLite (per CLAUDE.md) works when the file is
+    # on a path all workers can reach; for heavy parallelism point this at Cloud
+    # SQL (e.g. "mysql+pymysql://user:pw@host/db") via the env var.
+    storage_url: str = field(default_factory=lambda: _env(
+        "MDP_OPTUNA_STORAGE", "sqlite:///db.sqlite3"))
+
+    study_name: str = field(default_factory=lambda: _env(
+        "MDP_OPTUNA_STUDY", "mdp_pollution_pareto"))
+
+    # Total trials across the whole cluster, and how many Spark partitions
+    # (workers) share the work. trials_per_worker = ceil(n_trials/n_workers).
+    n_trials: int = field(default_factory=lambda: int(_env("MDP_OPTUNA_TRIALS", "512")))
+    n_parallel_workers: int = field(default_factory=lambda: int(
+        _env("MDP_OPTUNA_WORKERS", "0")))  # 0 -> auto from cluster parallelism
+
+    # The two objectives to minimise (must be secondary-pollutant columns).
+    objectives: List[str] = field(default_factory=lambda: [
+        c for c in _env("MDP_OPTUNA_OBJECTIVES", "ozone,pm25").split(",") if c
+    ])
+
+    # Intervention search bounds, in standardised units (the SEM is fitted on
+    # standardised data). Policy can only *reduce* or hold emissions, hence the
+    # default upper bound of 0.0 (the historical mean) down to 2 sd below it.
+    intervention_low: float = field(default_factory=lambda: float(
+        _env("MDP_INTERVENTION_LOW", "-2.0")))
+    intervention_high: float = field(default_factory=lambda: float(
+        _env("MDP_INTERVENTION_HIGH", "0.0")))
+
+    seed: int = field(default_factory=lambda: int(_env("MDP_SEED", "42")))
+
+
+@dataclass(frozen=True)
+class XaiConfig:
+    """Phase 3 - SHAP explainability of the Phase 2a XGBoost baseline."""
+
+    # Bounded sample of rows explained (SHAP is single-node; cap the driver
+    # footprint exactly as Phase 2b does for LiNGAM).
+    max_sample_rows: int = field(default_factory=lambda: int(
+        _env("MDP_SHAP_MAX_ROWS", "5000")))
+
+    # Max features shown on the summary plot.
+    max_display: int = field(default_factory=lambda: int(_env("MDP_SHAP_MAX_DISPLAY", "20")))
+
+    # Local driver path for the rendered summary plot (copy to GCS afterwards on
+    # Dataproc, or set to a mounted path).
+    summary_plot_path: str = field(default_factory=lambda: _env(
+        "MDP_SHAP_PLOT_PATH", "shap_summary.png"))
+
+    seed: int = field(default_factory=lambda: int(_env("MDP_SEED", "42")))
+
+
+@dataclass(frozen=True)
 class OutputConfig:
     """Where the phases write their artefacts."""
 
@@ -185,6 +250,10 @@ class OutputConfig:
     xgb_metrics_subpath: str = "phase2/xgb_baseline_metrics"
     causal_dag_subpath: str = "phase2/causal_dag"
     causal_sem_subpath: str = "phase2/causal_sem"
+
+    # Phase 3 sub-paths.
+    pareto_front_subpath: str = "phase3/pareto_front"
+    shap_importance_subpath: str = "phase3/shap_importance"
 
 
 @dataclass(frozen=True)
@@ -222,6 +291,8 @@ class PipelineConfig:
     clustering: ClusteringConfig = field(default_factory=ClusteringConfig)
     predictive: PredictiveConfig = field(default_factory=PredictiveConfig)
     causal: CausalConfig = field(default_factory=CausalConfig)
+    optimization: OptimizationConfig = field(default_factory=OptimizationConfig)
+    xai: XaiConfig = field(default_factory=XaiConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     spark: SparkConfig = field(default_factory=SparkConfig)
 

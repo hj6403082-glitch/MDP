@@ -61,6 +61,44 @@ Key Phase 2 overrides: `MDP_TARGET_COLUMN`, `MDP_XGB_NUM_WORKERS`,
 `MDP_PRIMARY_POLLUTANTS`, `MDP_SECONDARY_POLLUTANTS`, `MDP_LINGAM_MAX_ROWS`,
 `MDP_LINGAM_PRIOR`, `MDP_LINGAM_EDGE_THRESHOLD`.
 
+## Phase 3 — policy optimization & explainability
+
+**3a — Multi-objective optimization** (`src/phases/phase3_optimization.py`)
+Uses Optuna's **`NSGAIISampler`** to **minimise PM2.5 and Ozone
+simultaneously**, searching over emission-reduction interventions on the
+primary pollutants. Each candidate is scored by applying it as a causal
+*do*-operation on the Phase 2b SEM (fix the primaries, sever incoming edges,
+propagate through the recovered causal order) and reading off the resulting
+Ozone and PM2.5 — so the sign-sensitive ozone chemistry makes this a real
+Pareto trade-off, not "reduce everything to zero".
+
+The study lives in a **relational database** (`storage='sqlite:///db.sqlite3'`
+by default). Every Spark worker calls `optuna.load_study(...)` against that
+shared storage and runs its share of trials, so trials are evaluated **in
+parallel across the cluster** with the RDBMS as the coordination point. Each
+per-trial evaluation is pure NumPy over a tiny broadcast matrix — no big data
+is shuffled and the driver only reads the final Pareto front back. Point
+`MDP_OPTUNA_STORAGE` at Cloud SQL (MySQL/Postgres) for high parallelism.
+
+**3b — Explainability (XAI)** (`src/phases/phase3_xai.py`)
+Integrates **SHAP** (`TreeExplainer`) against the Phase 2a XGBoost baseline to
+extract per-feature importance and render a **summary (beeswarm) plot** showing
+the magnitude and direction of each chemical species' effect. SHAP is
+single-node, so Spark bound-samples the feature rows (default ≤ 5k) before only
+that capped sample reaches the driver. Outputs the plot plus a
+mean(|SHAP|) importance table.
+
+Run on Dataproc:
+
+```bash
+spark-submit --py-files config,src src/phases/phase3_optimization.py
+spark-submit --py-files config,src src/phases/phase3_xai.py
+```
+
+Key Phase 3 overrides: `MDP_OPTUNA_STORAGE`, `MDP_OPTUNA_STUDY`,
+`MDP_OPTUNA_TRIALS`, `MDP_OPTUNA_WORKERS`, `MDP_OPTUNA_OBJECTIVES`,
+`MDP_INTERVENTION_LOW`/`_HIGH`, `MDP_SHAP_MAX_ROWS`, `MDP_SHAP_PLOT_PATH`.
+
 ## Running
 
 Configuration is environment-driven (see `config/pipeline_config.py`). On
@@ -76,7 +114,11 @@ Key environment overrides: `MDP_INPUT_PATH`, `MDP_INPUT_FORMAT`,
 ## Layout
 
 ```
-config/pipeline_config.py      # all tunables (12-factor, env-overridable)
-src/spark_utils.py             # shared SparkSession builder
-src/phases/phase1_clustering.py# Phase 1 implementation
+config/pipeline_config.py        # all tunables (12-factor, env-overridable)
+src/spark_utils.py               # shared SparkSession builder
+src/phases/phase1_clustering.py  # Phase 1: ingestion + K-means
+src/phases/phase2_predictive.py  # Phase 2a: distributed XGBoost baseline
+src/phases/phase2_causal.py      # Phase 2b: DirectLiNGAM causal discovery
+src/phases/phase3_optimization.py# Phase 3a: Optuna NSGA-II (SQLite-backed)
+src/phases/phase3_xai.py         # Phase 3b: SHAP explainability
 ```

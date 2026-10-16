@@ -5,5 +5,7 @@ pyspark==3.5.3
 # Phase 2 - predictive baseline + causal discovery
 xgboost==2.1.1
 lingam==1.9.0
-# Phase 3 - multi-objective optimization
+# Phase 3 - multi-objective optimization + explainability (XAI)
 optuna==4.0.0
+shap==0.46.0
+matplotlib==3.9.2
