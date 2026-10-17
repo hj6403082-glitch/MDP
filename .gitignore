@@ -19,3 +19,7 @@ metastore_db/
 # Packaged modules for spark-submit --py-files (build artifact)
 mdp_modules.zip
 *.zip
+
+# data_collection.py local output
+telemetry_out/
+*.parquet

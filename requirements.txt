@@ -15,7 +15,12 @@ pyspark==3.5.3
 # --- Numerics / IO shared across phases ---
 numpy==1.26.4
 pandas==2.2.2
-pyarrow==16.1.0          # required for Spark<->pandas Arrow conversions
+pyarrow==16.1.0          # required for Spark<->pandas Arrow conversions + Parquet
+
+# --- Raw data collection (data_collection.py; local ETL, not needed on the
+#     Dataproc runtime image) ---
+requests==2.32.3         # OpenAQ / Open-Meteo REST calls
+google-cloud-storage==2.18.2  # upload staged Parquet to the Dataproc bucket
 
 # --- Phase 2a: distributed predictive baseline ---
 xgboost==2.1.1           # provides xgboost.spark.SparkXGBRegressor
