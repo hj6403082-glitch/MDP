@@ -15,3 +15,7 @@ shap_summary.png
 # Spark
 spark-warehouse/
 metastore_db/
+
+# Packaged modules for spark-submit --py-files (build artifact)
+mdp_modules.zip
+*.zip
