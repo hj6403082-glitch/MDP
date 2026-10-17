@@ -54,6 +54,27 @@ Valid `--phases` values: `phase1 phase2a phase2b phase3a phase3b` or `all`
 (default). The driver prints a JSON run-summary to stdout and exits non-zero if
 any phase failed, so it drops cleanly into CI or an orchestrator.
 
+### Dataproc Serverless: custom image + one-command submit
+
+[`Dockerfile`](Dockerfile) builds a custom runtime image containing all
+`requirements.txt` dependencies (Dataproc Serverless does not auto-install
+them), following Google's container requirements (the `spark` user at UID/GID
+1099, `tini`/`procps`, Python pinned to the 2.2 runtime).
+
+[`submit.sh`](submit.sh) packages the modules and submits the batch. Edit the
+clearly-marked variables at the top (`PROJECT_ID`, `REGION`, `STAGING_BUCKET`,
+`DATA_BUCKET`) — it refuses to run until you do — then:
+
+```bash
+BUILD_IMAGE=1 ./submit.sh      # first run: build+push the image, then submit
+./submit.sh                    # subsequent runs: submit all phases
+./submit.sh phase1 phase2a     # submit a subset
+```
+
+The script passes every `MDP_*` setting to both driver and executors. Note:
+for Phase 3a's parallel trials on Serverless, point `OPTUNA_STORAGE` at Cloud
+SQL — a local SQLite file is not shared across workers.
+
 ## Requirements
 
 Python 3.10/3.11 (matching recent Dataproc images). Install with:
