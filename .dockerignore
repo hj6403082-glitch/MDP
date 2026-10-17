@@ -1,0 +1,43 @@
+# Keep the Docker/Cloud Build context tiny: the image only needs
+# requirements.txt (the pipeline code ships separately via spark-submit
+# --py-files, not baked into the image). Everything below is excluded from the
+# build context that is uploaded to the daemon / Cloud Build.
+
+# Version control & CI
+.git/
+.github/
+.gitignore
+
+# Python caches / build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Pipeline source (delivered at submit time via mdp_modules.zip, not in-image)
+src/
+config/
+main.py
+
+# Packaging / run artifacts
+mdp_modules.zip
+*.zip
+db.sqlite3
+*.sqlite3
+shap_summary.png
+
+# Docs & project meta (not needed to build the image)
+README.md
+CLAUDE.md
+LICENSE
+docs/
+
+# Spark local dirs
+spark-warehouse/
+metastore_db/
+
+# Editor / OS noise
+.idea/
+.vscode/
+.DS_Store

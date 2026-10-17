@@ -75,6 +75,17 @@ The script passes every `MDP_*` setting to both driver and executors. Note:
 for Phase 3a's parallel trials on Serverless, point `OPTUNA_STORAGE` at Cloud
 SQL — a local SQLite file is not shared across workers.
 
+For CI-driven image builds, [`cloudbuild.yaml`](cloudbuild.yaml) builds and
+pushes the image to Artifact Registry (tagged with the commit SHA and
+`latest`); [`.dockerignore`](.dockerignore) keeps the build context minimal
+(the image only needs `requirements.txt` — pipeline code ships via
+`--py-files`). Point a Cloud Build trigger at it, or run manually:
+
+```bash
+gcloud builds submit --config=cloudbuild.yaml \
+  --substitutions=_REGION=us-central1,_AR_REPO=mdp
+```
+
 ## Requirements
 
 Python 3.10/3.11 (matching recent Dataproc images). Install with:
