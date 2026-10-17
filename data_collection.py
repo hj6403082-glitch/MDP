@@ -185,12 +185,41 @@ class Station:
     sensors: List[Tuple[int, str]] = field(default_factory=list)
 
 
-def fetch_country_locations(country_id: int, pause: float) -> List[Station]:
+def _utc_date(value) -> Optional[str]:
+    """Pull a 'YYYY-MM-DD' date from an OpenAQ datetime field, which is either a
+    ``{"utc": "...", "local": "..."}`` dict or a plain ISO string."""
+    if isinstance(value, dict):
+        value = value.get("utc")
+    return value[:10] if isinstance(value, str) else None
+
+
+def _coverage_overlaps(loc: dict, start: str, end: str) -> bool:
+    """True if a location's reported data coverage overlaps ``[start, end]``.
+
+    OpenAQ returns location-level ``datetimeFirst`` / ``datetimeLast``. A
+    station that never reported (``datetimeLast`` missing) is treated as dead.
+    ISO ``YYYY-MM-DD`` strings compare correctly with plain string order.
+    """
+    last = _utc_date(loc.get("datetimeLast"))
+    if last is None:
+        return False  # never reported -> skip
+    first = _utc_date(loc.get("datetimeFirst")) or "0000-01-01"
+    return first <= end and last >= start
+
+
+def fetch_country_locations(country_id: int, pause: float, start: str, end: str,
+                            ignore_coverage: bool = False) -> List[Station]:
     """Page through every OpenAQ location in the country and return the ones
-    that have usable coordinates and at least one target-pollutant sensor.
+    that have usable coordinates, at least one target-pollutant sensor, and
+    (unless ``ignore_coverage``) data coverage overlapping ``[start, end]``.
+
+    The coverage filter is what makes a country run practical: it skips the
+    hundreds of dead or long-defunct stations instead of querying each one's
+    hourly endpoint only to get nothing back.
     """
     headers = _openaq_headers()
     stations: List[Station] = []
+    skipped_coverage = 0
     page = 1
     while True:
         data = http_get_json(
@@ -207,6 +236,9 @@ def fetch_country_locations(country_id: int, pause: float) -> List[Station]:
             lat, lon = coords.get("latitude"), coords.get("longitude")
             if lat is None or lon is None:
                 continue  # cannot fetch weather without coordinates
+            if not ignore_coverage and not _coverage_overlaps(loc, start, end):
+                skipped_coverage += 1
+                continue  # no data in the requested window -> don't query it
             sensors = []
             for sensor in loc.get("sensors", []):
                 param = (sensor.get("parameter") or {}).get("name", "").lower()
@@ -216,12 +248,17 @@ def fetch_country_locations(country_id: int, pause: float) -> List[Station]:
                 stations.append(Station(
                     loc_id=loc["id"], name=loc.get("name") or f"loc_{loc['id']}",
                     latitude=float(lat), longitude=float(lon), sensors=sensors))
-        logger.info("Locations page %d: %d returned (%d usable stations so far)",
-                    page, len(results), len(stations))
+        logger.info("Locations page %d: %d returned (%d usable so far, %d skipped: no data in window)",
+                    page, len(results), len(stations), skipped_coverage)
         if len(results) < PAGE_SIZE:
             break  # last page
         page += 1
-    logger.info("Total usable stations in %s: %d", COUNTRY_ISO, len(stations))
+    logger.info("Usable stations in %s with data in %s..%s: %d (skipped %d outside window)",
+                COUNTRY_ISO, start, end, len(stations), skipped_coverage)
+    if not stations and not ignore_coverage:
+        logger.warning("No station has data in %s..%s. Try a different date range "
+                       "(many live Indian stations report recent data), or pass "
+                       "--ignore-coverage to query regardless.", start, end)
     return stations
 
 
@@ -369,7 +406,8 @@ def upload_to_gcs(local_path: str, gcs_prefix: str, _client_cache: dict) -> str:
 # Orchestration
 # --------------------------------------------------------------------------- #
 def run(args: argparse.Namespace) -> int:
-    stations = fetch_country_locations(COUNTRY_ID, args.pause)
+    stations = fetch_country_locations(
+        COUNTRY_ID, args.pause, args.start, args.end, args.ignore_coverage)
     if not stations:
         logger.error("No stations found for %s - aborting.", COUNTRY_ISO)
         return 1
@@ -438,6 +476,9 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
                    help="Re-collect stations even if their Parquet already exists.")
     p.add_argument("--limit-locations", type=int, default=0,
                    help="Process only the first N stations (0 = all). For testing.")
+    p.add_argument("--ignore-coverage", action="store_true",
+                   help="Do not skip stations whose reported data coverage falls "
+                        "outside --start/--end (query every station regardless).")
     p.add_argument("--pause", type=float, default=1.1,
                    help="Seconds to sleep between API calls (rate-limit safety).")
     p.add_argument("--weather-round", type=int, default=1,
