@@ -89,31 +89,38 @@ gcloud builds submit --config=cloudbuild.yaml \
 ## Collecting the raw telemetry (Phase 0)
 
 [`data_collection.py`](data_collection.py) populates `MDP_INPUT_PATH` with real
-data before Phase 1 runs. It fetches hourly air-quality data from **OpenAQ (v3)**
-for the primary pollutants (PM2.5, PM10, SO2, NO2, CO, NO, VOCs) and the
-secondary pollutant (Ozone), plus matching **Open-Meteo** weather (temperature,
-relative humidity, wind speed, pressure), merges them per city, writes Parquet,
-and uploads straight to your staging bucket. Output column names already match
-the Phase 1 config (`timestamp`/`station_id` id-columns, `ozone`, `pm25`, …).
+data before Phase 1 runs, for the **entire country of India**. It dynamically
+fetches every OpenAQ (v3) monitoring station in India, pulls hourly air-quality
+data for the primary pollutants (PM2.5, PM10, SO2, NO2, CO, NO, VOCs) and the
+secondary pollutant (Ozone), fetches matching **Open-Meteo** weather
+(temperature, relative humidity, wind speed, pressure), merges per station, and
+writes one Parquet file per station (optionally uploading to your bucket).
+Output columns already match the Phase 1 config (`timestamp`/`station_id`
+id-columns, `ozone`, `pm25`, …).
+
+Built for a country-scale job: exponential-backoff retries that honour HTTP 429
+`Retry-After` (a station is skipped, never the whole run), a **weather cache**
+on a rounded coordinate grid (clustered stations reuse one weather call), and
+**resume** — each station's Parquet is a checkpoint, so a rerun skips what's
+already collected.
 
 ```bash
-# 1) Edit the CITIES list at the top of data_collection.py (plain names;
-#    they are geocoded automatically). Then:
 export OPENAQ_API_KEY="<free key from https://explore.openaq.org/account>"
 pip install -r requirements.txt
 
-# 2) Collect + upload to your bucket:
-python data_collection.py \
-  --start 2023-01-01 --end 2023-12-31 \
-  --gcs-prefix gs://YOUR_BUCKET/raw/telemetry/
+# Smoke-test on 10 stations, locally, before committing to the full run:
+python data_collection.py --start 2023-01-01 --end 2023-03-31 \
+  --limit-locations 10 --no-upload
 
-# Inspect locally first (no upload):
-python data_collection.py --start 2023-01-01 --end 2023-03-31 --no-upload
+# Full India run, uploading to your bucket:
+python data_collection.py --start 2023-01-01 --end 2023-12-31 \
+  --gcs-prefix gs://YOUR_BUCKET/raw/telemetry/
 ```
 
 The GCS upload uses Application Default Credentials, so run
-`gcloud auth application-default login` first. Options: `--radius` (metres
-around each city, OpenAQ max 25000), `--max-locations`, `--local-dir`.
+`gcloud auth application-default login` first. Useful options: `--pause`
+(seconds between API calls), `--weather-round` (coordinate grid for the weather
+cache), `--limit-locations`, `--overwrite`, `--local-dir`.
 
 ## Requirements
 

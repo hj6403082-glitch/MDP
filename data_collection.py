@@ -1,39 +1,49 @@
 """
-data_collection.py - raw telemetry collection for Phase 1 of the MDP
-Causal-AI-for-Air-Pollution pipeline.
+data_collection.py - country-scale raw telemetry collection for Phase 1 of the
+MDP Causal-AI-for-Air-Pollution pipeline.
+
+Scope: the entire country of India (OpenAQ ``countries_id=9`` / ISO ``IN``).
 
 What it does
 ------------
-1. Resolves each configured city name to coordinates (Open-Meteo geocoding).
-2. Fetches hourly historical air-quality data from OpenAQ (v3) for the primary
-   pollutants (PM2.5, PM10, SO2, NO2, CO, NO, VOCs) and the secondary pollutant
-   (Ozone) at monitoring stations near each city.
-3. Fetches the matching hourly weather from Open-Meteo's historical archive
-   (air temperature, relative humidity, wind speed, atmospheric pressure) for
-   the same coordinates and date range.
-4. Merges air-quality + weather on the hourly timestamp into one tidy table per
-   city, with column names that line up with the Phase 1 config
-   (``timestamp``, ``station_id`` id-columns; ``ozone``, ``pm25``, ``no2`` ...).
-5. Writes Parquet (Spark-optimised) and optionally uploads straight to your
-   Dataproc staging bucket via ``google-cloud-storage``.
+1. Dynamically fetches ALL OpenAQ (v3) monitoring locations in India (paged).
+2. Extracts each station's coordinates and the sensors that report our target
+   pollutants (PM2.5, PM10, SO2, NO2, CO, NO, VOCs, Ozone).
+3. For each station: pulls hourly pollutant series from OpenAQ and the matching
+   hourly weather (temperature, humidity, wind speed, pressure) from Open-Meteo,
+   merges them on the hourly timestamp, and writes one Parquet file per station.
+4. Optionally uploads each Parquet straight to the Dataproc staging bucket.
 
-The output schema matches ``config/pipeline_config.py`` defaults, so the files
-drop into ``MDP_INPUT_PATH`` and Phase 1 reads them with no further mapping.
+Designed for a massive job without falling over
+-----------------------------------------------
+* **Rate limits / transient errors**: every HTTP call retries with exponential
+  backoff + jitter and honours ``Retry-After`` on HTTP 429; network errors and
+  5xx are retried too. After the retry budget is exhausted the *station* is
+  skipped (logged), never the whole run.
+* **Weather call amplification**: Open-Meteo weather is cached by a rounded
+  coordinate grid (default 0.1deg ~ 11 km). Clustered stations reuse one weather
+  fetch, cutting weather calls from thousands to hundreds.
+* **Resumability**: each station writes its own ``telemetry_IN_<id>.parquet``.
+  On restart, stations whose file already exists are skipped, so a crash never
+  restarts from zero. Spark reads the whole output directory as one dataset.
+* **Politeness**: a configurable pause between calls keeps you under the free
+  tier's per-minute ceiling.
 
-This is a *local* ETL utility (single-node pandas is appropriate here — it is
-the step that *creates* the telemetry the Spark pipeline later consumes).
+Output columns match ``config/pipeline_config.py`` (``timestamp``/``station_id``
+id-columns, ``ozone``, ``pm25`` ...), so the files feed Phase 1 directly.
 
 Quick start
 -----------
-    export OPENAQ_API_KEY="<your key from https://explore.openaq.org/account>"
+    export OPENAQ_API_KEY="<key from https://explore.openaq.org/account>"
     pip install -r requirements.txt
 
-    python data_collection.py \
-        --start 2023-01-01 --end 2023-12-31 \
-        --gcs-prefix gs://YOUR_BUCKET/raw/telemetry/
+    # Smoke-test on 10 stations, locally, before the full run:
+    python data_collection.py --start 2023-01-01 --end 2023-03-31 \
+        --limit-locations 10 --no-upload
 
-    # Collect locally only (no upload), e.g. to inspect first:
-    python data_collection.py --start 2023-01-01 --end 2023-03-31 --no-upload
+    # Full country run, uploading to your bucket:
+    python data_collection.py --start 2023-01-01 --end 2023-12-31 \
+        --gcs-prefix gs://YOUR_BUCKET/raw/telemetry/
 """
 
 from __future__ import annotations
@@ -41,9 +51,10 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import random
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 import requests
@@ -56,17 +67,16 @@ logger = logging.getLogger("mdp.data_collection")
 
 
 # ===========================================================================
-# ## FILL THIS IN  ↓↓↓  — the cities to collect (highly polluted urban /     ##
-# ## industrial areas). Plain names are fine; they are geocoded for you.     ##
+# Geographic scope: the whole country of India.
 # ===========================================================================
-CITIES: List[str] = ["CITY_1", "CITY_2"]
+COUNTRY_ID = 9       # OpenAQ v3 countries_id for India
+COUNTRY_ISO = "IN"   # used only for labelling output rows / filenames
 # ===========================================================================
 
 
-# OpenAQ parameter name -> our pipeline column name. Only parameters that a
-# station actually reports are collected; the rest are simply absent (and the
-# pipeline tolerates missing/NaN columns). 'o3' is renamed to 'ozone' to match
-# the Phase 1 config's secondary-pollutant name.
+# OpenAQ parameter name -> our pipeline column name. 'o3' -> 'ozone' to match
+# the Phase 1 config's secondary-pollutant name. Parameters a station does not
+# report are simply absent (the pipeline tolerates missing/NaN columns).
 POLLUTANT_PARAM_MAP: Dict[str, str] = {
     "pm25": "pm25",
     "pm10": "pm10",
@@ -75,7 +85,6 @@ POLLUTANT_PARAM_MAP: Dict[str, str] = {
     "co": "co",
     "no": "no",
     "o3": "ozone",
-    # VOCs are reported inconsistently across networks; map the common codes.
     "voc": "voc",
     "nmhc": "voc",
 }
@@ -89,67 +98,70 @@ WEATHER_VAR_MAP: Dict[str, str] = {
 }
 
 OPENAQ_BASE = "https://api.openaq.org/v3"
-GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 WEATHER_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 
-# Be a good API citizen: OpenAQ's free tier is rate-limited (~60 req/min).
-REQUEST_PAUSE_SEC = 1.1
-MAX_RETRIES = 5
+# Retry / politeness defaults (overridable via CLI).
+MAX_RETRIES = 6
+BACKOFF_BASE = 2.0
+BACKOFF_CAP = 120.0
+PAGE_SIZE = 1000
 
 
 # --------------------------------------------------------------------------- #
-# HTTP helper with retries, backoff and 429 (rate-limit) handling
+# HTTP helper: retries, exponential backoff + jitter, 429 / 5xx / network
 # --------------------------------------------------------------------------- #
-def _get(url: str, *, params: Optional[dict] = None,
-         headers: Optional[dict] = None) -> dict:
-    """GET a JSON endpoint with exponential backoff and rate-limit respect."""
-    backoff = 2.0
-    for attempt in range(1, MAX_RETRIES + 1):
-        resp = requests.get(url, params=params, headers=headers, timeout=60)
-        if resp.status_code == 429:  # rate limited - honour Retry-After if given
-            wait = float(resp.headers.get("Retry-After", backoff))
-            logger.warning("Rate limited; sleeping %.1fs (attempt %d)", wait, attempt)
+def http_get_json(url: str, *, params: Optional[dict] = None,
+                  headers: Optional[dict] = None,
+                  max_retries: int = MAX_RETRIES) -> Optional[dict]:
+    """GET JSON, surviving rate limits and transient failures.
+
+    Returns the parsed JSON, or ``None`` if the retry budget is exhausted (the
+    caller decides whether to skip that unit of work rather than crash).
+    """
+    backoff = BACKOFF_BASE
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(url, params=params, headers=headers, timeout=90)
+        except requests.exceptions.RequestException as exc:
+            # DNS / connection reset / read timeout: back off and retry.
+            wait = min(backoff, BACKOFF_CAP) + random.uniform(0, 1.0)
+            logger.warning("Network error on %s (%s); retry %d/%d in %.1fs",
+                           url, exc.__class__.__name__, attempt, max_retries, wait)
             time.sleep(wait)
-            backoff *= 2
+            backoff = min(backoff * 2, BACKOFF_CAP)
             continue
-        if resp.status_code >= 500:  # transient server error
-            logger.warning("HTTP %d from %s; retrying in %.1fs",
-                           resp.status_code, url, backoff)
-            time.sleep(backoff)
-            backoff *= 2
+
+        if resp.status_code == 429:
+            # Respect Retry-After when provided, else exponential backoff.
+            wait = float(resp.headers.get("Retry-After", backoff)) + random.uniform(0, 1.0)
+            logger.warning("Rate limited (429) on %s; sleeping %.1fs (retry %d/%d)",
+                           url, wait, attempt, max_retries)
+            time.sleep(wait)
+            backoff = min(backoff * 2, BACKOFF_CAP)
             continue
-        resp.raise_for_status()
+
+        if resp.status_code >= 500:
+            wait = min(backoff, BACKOFF_CAP) + random.uniform(0, 1.0)
+            logger.warning("HTTP %d on %s; retry %d/%d in %.1fs",
+                           resp.status_code, url, attempt, max_retries, wait)
+            time.sleep(wait)
+            backoff = min(backoff * 2, BACKOFF_CAP)
+            continue
+
+        if resp.status_code == 404:
+            return None  # nothing there; caller treats as "no data"
+
+        try:
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as exc:
+            logger.error("Unrecoverable HTTP error on %s: %s", url, exc)
+            return None
         return resp.json()
-    raise RuntimeError(f"Giving up on {url} after {MAX_RETRIES} attempts.")
+
+    logger.error("Giving up on %s after %d attempts.", url, max_retries)
+    return None
 
 
-# --------------------------------------------------------------------------- #
-# 1) Geocoding: city name -> coordinates
-# --------------------------------------------------------------------------- #
-@dataclass
-class GeoCity:
-    name: str
-    latitude: float
-    longitude: float
-
-
-def geocode_city(name: str) -> Optional[GeoCity]:
-    """Resolve a city name to coordinates via Open-Meteo's geocoder (no key)."""
-    data = _get(GEOCODE_URL, params={"name": name, "count": 1, "format": "json"})
-    results = data.get("results") or []
-    if not results:
-        logger.error("Could not geocode city %r - skipping.", name)
-        return None
-    r = results[0]
-    geo = GeoCity(name=name, latitude=float(r["latitude"]),
-                  longitude=float(r["longitude"]))
-    logger.info("Geocoded %r -> (%.4f, %.4f)", name, geo.latitude, geo.longitude)
-    return geo
-
-
-# --------------------------------------------------------------------------- #
-# 2) OpenAQ: find nearby stations and fetch hourly pollutant series
-# --------------------------------------------------------------------------- #
 def _openaq_headers() -> dict:
     key = os.environ.get("OPENAQ_API_KEY")
     if not key:
@@ -160,236 +172,277 @@ def _openaq_headers() -> dict:
     return {"X-API-Key": key}
 
 
-def find_sensors(geo: GeoCity, radius_m: int, max_locations: int
-                 ) -> List[Tuple[int, int, str]]:
-    """Return ``(location_id, sensor_id, pollutant_column)`` tuples for stations
-    near ``geo`` that report one of our target pollutants.
+# --------------------------------------------------------------------------- #
+# 1) + 2) Fetch all India locations and their coordinates / sensors
+# --------------------------------------------------------------------------- #
+@dataclass
+class Station:
+    loc_id: int
+    name: str
+    latitude: float
+    longitude: float
+    # (sensor_id, pollutant_column) for sensors reporting target pollutants.
+    sensors: List[Tuple[int, str]] = field(default_factory=list)
+
+
+def fetch_country_locations(country_id: int, pause: float) -> List[Station]:
+    """Page through every OpenAQ location in the country and return the ones
+    that have usable coordinates and at least one target-pollutant sensor.
     """
     headers = _openaq_headers()
-    data = _get(
-        f"{OPENAQ_BASE}/locations",
-        params={"coordinates": f"{geo.latitude},{geo.longitude}",
-                "radius": radius_m, "limit": max_locations},
-        headers=headers,
-    )
-    time.sleep(REQUEST_PAUSE_SEC)
+    stations: List[Station] = []
+    page = 1
+    while True:
+        data = http_get_json(
+            f"{OPENAQ_BASE}/locations",
+            params={"countries_id": country_id, "limit": PAGE_SIZE, "page": page},
+            headers=headers,
+        )
+        time.sleep(pause)
+        if not data:
+            break
+        results = data.get("results", [])
+        for loc in results:
+            coords = loc.get("coordinates") or {}
+            lat, lon = coords.get("latitude"), coords.get("longitude")
+            if lat is None or lon is None:
+                continue  # cannot fetch weather without coordinates
+            sensors = []
+            for sensor in loc.get("sensors", []):
+                param = (sensor.get("parameter") or {}).get("name", "").lower()
+                if param in POLLUTANT_PARAM_MAP:
+                    sensors.append((sensor["id"], POLLUTANT_PARAM_MAP[param]))
+            if sensors:
+                stations.append(Station(
+                    loc_id=loc["id"], name=loc.get("name") or f"loc_{loc['id']}",
+                    latitude=float(lat), longitude=float(lon), sensors=sensors))
+        logger.info("Locations page %d: %d returned (%d usable stations so far)",
+                    page, len(results), len(stations))
+        if len(results) < PAGE_SIZE:
+            break  # last page
+        page += 1
+    logger.info("Total usable stations in %s: %d", COUNTRY_ISO, len(stations))
+    return stations
 
-    sensors: List[Tuple[int, int, str]] = []
-    for loc in data.get("results", []):
-        loc_id = loc["id"]
-        for sensor in loc.get("sensors", []):
-            param = (sensor.get("parameter") or {}).get("name", "").lower()
-            if param in POLLUTANT_PARAM_MAP:
-                sensors.append((loc_id, sensor["id"], POLLUTANT_PARAM_MAP[param]))
-    logger.info("%s: %d matching sensors across nearby stations",
-                geo.name, len(sensors))
-    return sensors
 
-
-def fetch_sensor_hours(sensor_id: int, start: str, end: str) -> List[dict]:
-    """Fetch hourly-aggregated measurements for one sensor over [start, end].
-
-    Pages through the OpenAQ v3 hourly endpoint. Returns a list of
-    ``{"timestamp": <ISO utc>, "value": <float>}`` dicts.
-    """
+# --------------------------------------------------------------------------- #
+# OpenAQ hourly pollutant series for one sensor
+# --------------------------------------------------------------------------- #
+def fetch_sensor_hours(sensor_id: int, start: str, end: str,
+                       pause: float) -> List[dict]:
+    """Paged hourly measurements for one sensor -> [{'timestamp','value'}]."""
     headers = _openaq_headers()
     rows: List[dict] = []
     page = 1
     while True:
-        data = _get(
+        data = http_get_json(
             f"{OPENAQ_BASE}/sensors/{sensor_id}/hours",
             params={"datetime_from": start, "datetime_to": end,
-                    "limit": 1000, "page": page},
+                    "limit": PAGE_SIZE, "page": page},
             headers=headers,
         )
+        time.sleep(pause)
+        if not data:
+            break
         results = data.get("results", [])
         for r in results:
-            # v3 hourly results carry the period start under period.datetimeFrom.
             period = r.get("period", {}) or {}
             dt = (period.get("datetimeFrom") or {}).get("utc")
             value = r.get("value")
             if dt is not None and value is not None:
                 rows.append({"timestamp": dt, "value": float(value)})
-        time.sleep(REQUEST_PAUSE_SEC)
-        # Stop when the last page returned fewer than the page size.
-        if len(results) < 1000:
+        if len(results) < PAGE_SIZE:
             break
         page += 1
     return rows
 
 
-def collect_pollutants(geo: GeoCity, start: str, end: str, radius_m: int,
-                       max_locations: int):
-    """Build a wide hourly pollutant DataFrame (timestamp, station_id, <species>)."""
+# --------------------------------------------------------------------------- #
+# 3) Open-Meteo weather, cached by a rounded coordinate grid
+# --------------------------------------------------------------------------- #
+class WeatherCache:
+    """Fetch-and-memoise hourly weather keyed on rounded coordinates.
+
+    Nearby stations share a grid cell, so we fetch each cell's weather once.
+    This is the single biggest reduction in outbound calls for a country run.
+    """
+
+    def __init__(self, start: str, end: str, round_dp: int, pause: float):
+        self.start, self.end = start, end
+        self.round_dp, self.pause = round_dp, pause
+        self._cache: Dict[Tuple[float, float], object] = {}
+
+    def get(self, lat: float, lon: float):
+        import pandas as pd
+
+        key = (round(lat, self.round_dp), round(lon, self.round_dp))
+        if key in self._cache:
+            return self._cache[key]
+
+        data = http_get_json(
+            WEATHER_ARCHIVE_URL,
+            params={
+                "latitude": key[0], "longitude": key[1],
+                "start_date": self.start, "end_date": self.end,
+                "hourly": ",".join(WEATHER_VAR_MAP.keys()),
+                "timezone": "UTC",
+            },
+        )
+        time.sleep(self.pause)
+        df = None
+        hourly = (data or {}).get("hourly", {})
+        if hourly and "time" in hourly:
+            df = pd.DataFrame(hourly).rename(columns=WEATHER_VAR_MAP)
+            df["timestamp"] = pd.to_datetime(df["time"], utc=True).dt.floor("h")
+            df = df.drop(columns=["time"])
+        self._cache[key] = df  # cache None too, so we don't refetch a dead cell
+        return df
+
+
+# --------------------------------------------------------------------------- #
+# Build one station's merged hourly table
+# --------------------------------------------------------------------------- #
+def build_station_table(station: Station, start: str, end: str,
+                        weather: WeatherCache, pause: float):
+    """Merge a station's pollutant series with its (cached) weather."""
     import pandas as pd
 
-    sensors = find_sensors(geo, radius_m, max_locations)
     long_records: List[dict] = []
-    for loc_id, sensor_id, column in sensors:
-        hours = fetch_sensor_hours(sensor_id, start, end)
-        for h in hours:
+    for sensor_id, column in station.sensors:
+        for h in fetch_sensor_hours(sensor_id, start, end, pause):
             long_records.append({
-                "timestamp": h["timestamp"],
-                "station_id": f"{geo.name}:{loc_id}",
-                "parameter": column,
+                "timestamp": h["timestamp"], "parameter": column,
                 "value": h["value"],
             })
     if not long_records:
-        logger.warning("%s: no pollutant measurements returned.", geo.name)
         return None
 
     long_df = pd.DataFrame(long_records)
     long_df["timestamp"] = pd.to_datetime(long_df["timestamp"], utc=True).dt.floor("h")
-    # Average duplicate (timestamp, station, parameter) readings, then pivot to
-    # one column per pollutant species.
     wide = (
-        long_df.groupby(["timestamp", "station_id", "parameter"])["value"]
-        .mean()
-        .unstack("parameter")
-        .reset_index()
+        long_df.groupby(["timestamp", "parameter"])["value"].mean()
+        .unstack("parameter").reset_index()
     )
     wide.columns.name = None
-    return wide
+    wide.insert(1, "station_id", f"{COUNTRY_ISO}:{station.loc_id}")
+    wide.insert(2, "city", station.name)
+    wide.insert(3, "country", COUNTRY_ISO)
+
+    wx = weather.get(station.latitude, station.longitude)
+    if wx is not None:
+        wide = wide.merge(wx, on="timestamp", how="left")
+    return wide.sort_values("timestamp").reset_index(drop=True)
 
 
 # --------------------------------------------------------------------------- #
-# 3) Open-Meteo: hourly weather for the same coordinates / range
+# Parquet write + GCS upload
 # --------------------------------------------------------------------------- #
-def collect_weather(geo: GeoCity, start: str, end: str):
-    """Fetch hourly weather and return a DataFrame (timestamp, <weather cols>)."""
-    import pandas as pd
-
-    data = _get(
-        WEATHER_ARCHIVE_URL,
-        params={
-            "latitude": geo.latitude, "longitude": geo.longitude,
-            "start_date": start, "end_date": end,
-            "hourly": ",".join(WEATHER_VAR_MAP.keys()),
-            "timezone": "UTC",
-        },
-    )
-    hourly = data.get("hourly", {})
-    if not hourly or "time" not in hourly:
-        logger.warning("%s: no weather data returned.", geo.name)
-        return None
-
-    df = pd.DataFrame(hourly).rename(columns=WEATHER_VAR_MAP)
-    df["timestamp"] = pd.to_datetime(df["time"], utc=True).dt.floor("h")
-    df = df.drop(columns=["time"])
-    return df
-
-
-# --------------------------------------------------------------------------- #
-# 4) Merge + write Parquet
-# --------------------------------------------------------------------------- #
-def build_city_table(geo: GeoCity, start: str, end: str, radius_m: int,
-                     max_locations: int):
-    """Merge pollutant + weather into one hourly table for a city."""
-    pollutants = collect_pollutants(geo, start, end, radius_m, max_locations)
-    if pollutants is None:
-        return None
-    weather = collect_weather(geo, start, end)
-
-    merged = pollutants
-    if weather is not None:
-        # Left join: weather is city-level, broadcast onto each station row.
-        merged = pollutants.merge(weather, on="timestamp", how="left")
-    merged.insert(2, "city", geo.name)
-    merged = merged.sort_values(["station_id", "timestamp"]).reset_index(drop=True)
-    logger.info("%s: merged table %d rows x %d cols",
-                geo.name, len(merged), merged.shape[1])
-    return merged
-
-
-def write_parquet(df, local_dir: str, city: str) -> str:
-    """Write a city DataFrame to a local Parquet file; return its path."""
+def write_parquet(df, local_dir: str, loc_id: int) -> str:
     os.makedirs(local_dir, exist_ok=True)
-    safe = city.lower().replace(" ", "_").replace("/", "_")
-    path = os.path.join(local_dir, f"telemetry_{safe}.parquet")
-    # Snappy-compressed Parquet via pyarrow - exactly what Phase 1's Spark
-    # reader expects.
+    path = os.path.join(local_dir, f"telemetry_{COUNTRY_ISO}_{loc_id}.parquet")
     df.to_parquet(path, engine="pyarrow", compression="snappy", index=False)
-    logger.info("Wrote %s", path)
     return path
 
 
-# --------------------------------------------------------------------------- #
-# 5) Upload to GCS
-# --------------------------------------------------------------------------- #
 def parse_gs_uri(uri: str) -> Tuple[str, str]:
-    """Split ``gs://bucket/prefix/`` into ``(bucket, prefix)``."""
     if not uri.startswith("gs://"):
         raise ValueError(f"Not a gs:// URI: {uri!r}")
-    without = uri[len("gs://"):]
-    bucket, _, prefix = without.partition("/")
+    bucket, _, prefix = uri[len("gs://"):].partition("/")
     return bucket, prefix.strip("/")
 
 
-def upload_to_gcs(local_path: str, gcs_prefix: str) -> str:
-    """Upload a local file under ``gs://bucket/prefix/`` and return the gs URI."""
+def upload_to_gcs(local_path: str, gcs_prefix: str, _client_cache: dict) -> str:
     from google.cloud import storage
 
     bucket_name, prefix = parse_gs_uri(gcs_prefix)
     blob_path = f"{prefix}/{os.path.basename(local_path)}" if prefix \
         else os.path.basename(local_path)
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    blob = bucket.blob(blob_path)
-    blob.upload_from_filename(local_path)
-    uri = f"gs://{bucket_name}/{blob_path}"
-    logger.info("Uploaded -> %s", uri)
-    return uri
+    client = _client_cache.get("client")
+    if client is None:
+        client = storage.Client()
+        _client_cache["client"] = client
+    client.bucket(bucket_name).blob(blob_path).upload_from_filename(local_path)
+    return f"gs://{bucket_name}/{blob_path}"
 
 
 # --------------------------------------------------------------------------- #
 # Orchestration
 # --------------------------------------------------------------------------- #
 def run(args: argparse.Namespace) -> int:
-    if any(c.startswith("CITY_") for c in CITIES):
-        logger.warning(
-            "CITIES still contains placeholders %s - edit the CITIES list at "
-            "the top of data_collection.py before a real run.", CITIES)
-
-    written: List[str] = []
-    for name in CITIES:
-        geo = geocode_city(name)
-        if geo is None:
-            continue
-        table = build_city_table(
-            geo, args.start, args.end, args.radius, args.max_locations)
-        if table is None or table.empty:
-            logger.warning("No data collected for %s - skipping.", name)
-            continue
-        local_path = write_parquet(table, args.local_dir, name)
-        written.append(local_path)
-        if not args.no_upload:
-            upload_to_gcs(local_path, args.gcs_prefix)
-
-    if not written:
-        logger.error("No telemetry was collected for any city.")
+    stations = fetch_country_locations(COUNTRY_ID, args.pause)
+    if not stations:
+        logger.error("No stations found for %s - aborting.", COUNTRY_ISO)
         return 1
-    logger.info("Done. %d city file(s) written%s.", len(written),
-                "" if args.no_upload else " and uploaded")
-    return 0
+    if args.limit_locations > 0:
+        stations = stations[:args.limit_locations]
+        logger.info("Limiting to first %d stations (testing).", len(stations))
+
+    weather = WeatherCache(args.start, args.end, args.weather_round, args.pause)
+    gcs_clients: dict = {}
+    n_ok = n_skip = n_empty = n_fail = 0
+
+    for i, station in enumerate(stations, start=1):
+        out_path = os.path.join(
+            args.local_dir, f"telemetry_{COUNTRY_ISO}_{station.loc_id}.parquet")
+        # Resume: skip stations already collected unless --overwrite.
+        if os.path.exists(out_path) and not args.overwrite:
+            n_skip += 1
+            continue
+
+        logger.info("[%d/%d] station %s (%s)",
+                    i, len(stations), station.loc_id, station.name)
+        try:
+            table = build_station_table(
+                station, args.start, args.end, weather, args.pause)
+        except Exception as exc:  # noqa: BLE001 - never let one station kill the run
+            logger.exception("Station %s failed (%s); skipping.",
+                             station.loc_id, exc)
+            n_fail += 1
+            continue
+
+        if table is None or table.empty:
+            n_empty += 1
+            continue
+
+        path = write_parquet(table, args.local_dir, station.loc_id)
+        n_ok += 1
+        if not args.no_upload:
+            try:
+                upload_to_gcs(path, args.gcs_prefix, gcs_clients)
+            except Exception as exc:  # noqa: BLE001 - keep local file, keep going
+                logger.error("Upload failed for %s (%s); kept local copy.",
+                             path, exc)
+
+        if n_ok % 25 == 0:
+            logger.info("Progress: %d written, %d skipped, %d empty, %d failed",
+                        n_ok, n_skip, n_empty, n_fail)
+
+    logger.info("DONE. written=%d skipped(resume)=%d empty=%d failed=%d",
+                n_ok, n_skip, n_empty, n_fail)
+    return 0 if (n_ok > 0 or n_skip > 0) else 1
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Collect air-quality + weather telemetry and stage it as "
+        description="Collect India-wide air-quality + weather telemetry as "
                     "Parquet for the MDP Phase 1 pipeline.")
     p.add_argument("--start", required=True, help="Start date, YYYY-MM-DD (UTC).")
     p.add_argument("--end", required=True, help="End date, YYYY-MM-DD (UTC).")
     p.add_argument("--gcs-prefix", default="gs://YOUR_BUCKET/raw/telemetry/",
                    help="Destination gs:// prefix for the Parquet files.")
     p.add_argument("--local-dir", default="./telemetry_out",
-                   help="Local directory for the Parquet files before upload.")
-    p.add_argument("--radius", type=int, default=12000,
-                   help="Search radius around each city centre, metres "
-                        "(OpenAQ max 25000).")
-    p.add_argument("--max-locations", type=int, default=50,
-                   help="Max monitoring stations to pull per city.")
+                   help="Local directory for Parquet (also the resume checkpoint).")
     p.add_argument("--no-upload", action="store_true",
                    help="Write Parquet locally only; skip the GCS upload.")
+    p.add_argument("--overwrite", action="store_true",
+                   help="Re-collect stations even if their Parquet already exists.")
+    p.add_argument("--limit-locations", type=int, default=0,
+                   help="Process only the first N stations (0 = all). For testing.")
+    p.add_argument("--pause", type=float, default=1.1,
+                   help="Seconds to sleep between API calls (rate-limit safety).")
+    p.add_argument("--weather-round", type=int, default=1,
+                   help="Decimal places to round coords for the weather cache "
+                        "(1 = ~11km grid; higher = more calls, finer weather).")
     return p.parse_args(argv)
 
 
