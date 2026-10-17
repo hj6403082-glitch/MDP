@@ -106,7 +106,9 @@ already collected.
 
 ```bash
 export OPENAQ_API_KEY="<free key from https://explore.openaq.org/account>"
-pip install -r requirements.txt
+# Lean deps for just this tool — installs on any modern Python (3.12/3.13/3.14).
+# (The full requirements.txt is the Dataproc runtime stack, Python 3.12.)
+pip install -r requirements-datacollection.txt
 
 # Smoke-test on 10 stations, locally, before committing to the full run:
 python data_collection.py --start 2023-01-01 --end 2023-03-31 \

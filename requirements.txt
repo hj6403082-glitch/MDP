@@ -13,9 +13,18 @@
 pyspark==3.5.3
 
 # --- Numerics / IO shared across phases ---
-numpy==1.26.4
+# numpy relaxed so pip resolves a wheel for the host Python (1.26.4 had no
+# build for 3.13/3.14). 2.3+ is compatible with pyspark 3.5, pandas 2.2+,
+# xgboost 2.1 and shap 0.46.
+numpy>=2.3.0,<3
 pandas==2.2.2
 pyarrow==16.1.0          # required for Spark<->pandas Arrow conversions + Parquet
+
+# NOTE: this file targets the Dataproc runtime (Python 3.12). To run
+# data_collection.py locally on a newer Python (3.13/3.14) where the compiled
+# pins below (pandas/pyarrow/scikit-learn/shap/matplotlib) have no wheels yet,
+# install requirements-datacollection.txt instead - it has only what that
+# script needs, with relaxed versions that resolve on new interpreters.
 
 # --- Raw data collection (data_collection.py; local ETL, not needed on the
 #     Dataproc runtime image) ---

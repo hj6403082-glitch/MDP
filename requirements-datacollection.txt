@@ -1,0 +1,18 @@
+# ---------------------------------------------------------------------------
+# Dependencies for the LOCAL data-collection tool (data_collection.py) only.
+#
+# data_collection.py does NOT use Spark, XGBoost, LiNGAM, Optuna or SHAP, so
+# this lean set installs cleanly on modern Python (3.12 / 3.13 / 3.14) where
+# the heavy, compiled pins in the main requirements.txt have no wheels yet.
+#
+#   pip install -r requirements-datacollection.txt
+#
+# Versions are lower-bounded (not hard-pinned) so pip picks the newest wheel
+# built for your interpreter.
+# ---------------------------------------------------------------------------
+
+requests>=2.32.3                 # OpenAQ / Open-Meteo REST calls
+pandas>=2.2.3                    # tabular merge + Parquet write
+pyarrow>=17.0.0                  # Parquet engine for pandas.to_parquet
+numpy>=2.3.0                     # pulled in by pandas; floored for 3.13/3.14 wheels
+google-cloud-storage>=2.18.2     # upload staged Parquet to the Dataproc bucket
