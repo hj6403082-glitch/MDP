@@ -1,0 +1,7 @@
+equation,order,target
+no = 0 + e_no,0,no
+no2 = +0.3846*no + e_no2,1,no2
+co = +0.3267*no +0.2635*no2 + e_co,2,co
+so2 = 0 + e_so2,3,so2
+ozone = -0.1243*no + e_ozone,4,ozone
+pm25 = +0.0925*no +0.2194*no2 +0.2279*co + e_pm25,5,pm25

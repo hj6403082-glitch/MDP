@@ -23,3 +23,7 @@ mdp_modules.zip
 # data_collection.py local output
 telemetry_out/
 *.parquet
+
+# ...but DO keep the committed paper results/figures
+!results/
+!results/**
