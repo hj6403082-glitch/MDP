@@ -27,3 +27,7 @@ telemetry_out/
 # ...but DO keep the committed paper results/figures
 !results/
 !results/**
+
+# ...and keep the committed raw dataset
+!data/
+!data/**
