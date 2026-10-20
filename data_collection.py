@@ -377,6 +377,14 @@ def build_station_table(station: Station, start: str, end: str,
 def write_parquet(df, local_dir: str, loc_id: int) -> str:
     os.makedirs(local_dir, exist_ok=True)
     path = os.path.join(local_dir, f"telemetry_{COUNTRY_ISO}_{loc_id}.parquet")
+    # Cast every measurement column to float64 so all station files share a
+    # consistent schema. Open-Meteo returns some values (e.g. humidity) as whole
+    # numbers, which would otherwise be stored as int in some files and float in
+    # others, breaking Spark's schema merge on read.
+    id_cols = {"timestamp", "station_id", "city", "country"}
+    for col in df.columns:
+        if col not in id_cols:
+            df[col] = df[col].astype("float64")
     df.to_parquet(path, engine="pyarrow", compression="snappy", index=False)
     return path
 
