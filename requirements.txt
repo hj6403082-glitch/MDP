@@ -46,5 +46,7 @@ scikit-learn==1.5.1      # required by lingam (and shap)
 optuna==4.0.0            # NSGAIISampler + relational-DB study backend
 
 # --- Phase 3b: explainability (XAI) ---
-shap==0.46.0
+# shap 0.46 breaks on numpy 2.x (np.dtype(np.floating) was disallowed in numpy
+# 2.0); 0.47+ is numpy-2 compatible.
+shap>=0.47.0
 matplotlib==3.9.2        # headless (Agg) rendering of the SHAP summary plot
