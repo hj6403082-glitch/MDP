@@ -280,6 +280,11 @@ class SparkConfig:
         "spark.sql.execution.arrow.pyspark.enabled": "true",
         # Push more work into scan time: skip row groups via stats.
         "spark.sql.parquet.filterPushdown": "true",
+        # Telemetry from different stations reports different pollutant sets, so
+        # the per-station Parquet files have differing columns. Merge their
+        # schemas on read to take the UNION of columns (missing ones become
+        # null) instead of silently using just one file's schema.
+        "spark.sql.parquet.mergeSchema": "true",
     })
 
 
