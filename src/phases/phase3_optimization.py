@@ -78,6 +78,15 @@ class CausalPolicyModel:
         """
         import numpy as np
 
+        # Reject any intervention on a variable absent from the fitted model
+        # rather than silently ignoring it (guards against phantom variables
+        # such as voc that are not part of the fitted graph).
+        unknown = [p for p in intervention if p not in self.index]
+        if unknown:
+            raise ValueError(
+                f"Intervention variables not in the fitted model: {unknown}. "
+                f"Fitted variables are {self.columns}.")
+
         n = len(self.columns)
         x = np.zeros(n)
         primary_set = set(self.primary)
@@ -119,12 +128,29 @@ def _topological_order(n: int, adjacency, threshold: float = 1e-12) -> List[int]
     return order
 
 
-def load_causal_model(spark, cfg: PipelineConfig) -> CausalPolicyModel:
-    """Reconstruct the SEM from the Phase 2b DAG parquet + configured pollutants.
+def supported_decision_variables(configured, graph_vars):
+    """Split configured decision variables into those present in the fitted graph
+    and those that are not.
 
-    The edge table (source, target, coefficient) is small, so reading it back is
-    trivial. Node set = configured primary + secondary pollutants; the adjacency
-    is filled from the persisted edges.
+    A variable absent from the fitted model (e.g. ``voc``, which is structurally
+    missing from the data) can have no identifiable effect and MUST NOT be an
+    optimization variable — optimizing over it silently produces meaningless
+    ``policy_*`` columns. Returns ``(supported, rejected)`` preserving order.
+    """
+    gv = set(graph_vars)
+    supported = [v for v in configured if v in gv]
+    rejected = [v for v in configured if v not in gv]
+    return supported, rejected
+
+
+def load_causal_model(spark, cfg: PipelineConfig) -> CausalPolicyModel:
+    """Reconstruct the SEM from the Phase 2b DAG parquet.
+
+    The node set is taken from the **fitted graph** (the persisted edges), not
+    from configuration, so variables that were never fitted (e.g. ``voc``) are
+    excluded. Decision variables are the configured primaries intersected with
+    the fitted nodes; any configured-but-unfitted variable is rejected with a
+    warning rather than optimized over.
     """
     import numpy as np
 
@@ -132,9 +158,16 @@ def load_causal_model(spark, cfg: PipelineConfig) -> CausalPolicyModel:
     edges_path = f"{base}/{cfg.output.causal_dag_subpath}"
     edges = spark.read.parquet(edges_path).collect()  # tiny edge list
 
-    primary = list(cfg.causal.primary_pollutants)
-    secondary = list(cfg.causal.secondary_pollutants)
-    columns = primary + secondary
+    # Node set = variables that actually appear in the fitted graph.
+    graph_vars = sorted({r["source"] for r in edges} | {r["target"] for r in edges})
+    configured_secondary = [c for c in cfg.causal.secondary_pollutants if c in graph_vars]
+    # Deterministic column order: fitted primaries first, then fitted secondaries.
+    primary, rejected = supported_decision_variables(
+        cfg.causal.primary_pollutants, graph_vars)
+    if rejected:
+        logger.warning("Rejecting configured decision variables absent from the "
+                       "fitted graph (no identifiable effect): %s", rejected)
+    columns = [c for c in graph_vars if c not in configured_secondary] + configured_secondary
     index = {c: i for i, c in enumerate(columns)}
 
     n = len(columns)
@@ -237,7 +270,13 @@ def run_optimization(config: Optional[PipelineConfig] = None, spark=None) -> Dic
             from config.pipeline_config import OptimizationConfig  # noqa: F401
 
             local_model = bc_model.value
-            study = optuna.load_study(study_name=study_name, storage=storage_url)
+            # The study's sampler is NOT persisted in storage; load_study without
+            # an explicit sampler silently falls back to the default (TPE), NOT
+            # the driver's NSGA-II. Re-supply the sampler on every worker so the
+            # configured multi-objective optimizer is actually used.
+            study = optuna.load_study(
+                study_name=study_name, storage=storage_url,
+                sampler=optuna.samplers.NSGAIISampler(seed=seed))
 
             def objective(trial):
                 intervention = {
