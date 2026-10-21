@@ -1,0 +1,21 @@
+{
+  "saved_policies": 19,
+  "dominated_by_exact_front": 19,
+  "internally_dominated_among_saved": 0,
+  "pm25_gap_to_exact_front_mean": 0.04568132412432754,
+  "pm25_gap_to_exact_front_max": 0.29781205660467613,
+  "pm25_gap_to_exact_front_min": 0.004480774533410337,
+  "exact_front_endpoints": {
+    "ozone_min": {
+      "z_no": 0.0,
+      "ozone": 0.0,
+      "pm25": -0.8946083065401054
+    },
+    "pm25_min": {
+      "z_no": -2.0,
+      "ozone": 0.24851006641545156,
+      "pm25": -1.0795087000720516
+    }
+  },
+  "note_voc_so2": "voc and so2 have zero effect; voc is not a fitted variable"
+}
