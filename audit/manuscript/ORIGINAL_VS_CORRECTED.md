@@ -12,7 +12,7 @@
 | **Optimization** | NSGA-II Pareto-optimal emission policies | All 19 points dominated by the exact closed-form frontier; workers ran TPE, not NSGA-II |
 | **Interventions** | Emission-reduction policies with benefits | Standardized ambient-concentration what-ifs; not emissions, no benefit units |
 | **VOC** | A decision variable in optimization | Structurally absent from data; phantom variable (now rejected in code) |
-| **Units** | (Not discussed) | Not stored; CO mixed mg/m³ vs µg/m³ — a demonstrated cross-station error |
+| **Units** | (Not discussed) | Not stored / unverified; CO is uniform mg/m³ (not a cross-station mix — initial reading corrected), ×1000 from µg/m³ pollutants; 35 non-physical outliers flagged; screening resolves CO's clustering |
 | **Weather** | (Treated as data) | Modelled Open-Meteo reanalysis, not station observations |
 | **Representativeness** | National (India-wide) | Urban, Delhi-NCR-heavy; not nationally representative |
 | **Software bugs** | — | NSGA-II worker sampler, phantom VOC var, unpersisted scalers — fixed in Phase B with tests |

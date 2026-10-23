@@ -9,7 +9,7 @@ narrowed/caveated) · **Unsupported** (not justified by available evidence).
 | 2 | 204-station Indian dataset, ~1.18M station-hours | Supported | `audit/data_audit.py`. |
 | 3 | Dataset is nationally representative | Unsupported | Urban, Delhi-NCR-heavy OpenAQ network (audit §A §8). |
 | 4 | Reported pollutant completeness (90%+) | Conditional | True only *within existing rows*; ~66% of full grid; 37 stations <50% (audit §A). |
-| 5 | Measurements are comparable across stations | Unsupported | Units not stored; CO mixed mg/m³ vs µg/m³ (max 1490 vs p99.9 7.31). |
+| 5 | Measurements are comparable across stations | Conditional | Units unverified; CO uniform mg/m³ scale vs others' µg/m³ (not a cross-station mix — correction); 35 non-physical outliers flagged (Phase A2). |
 | 6 | Ozone is predictable from pollutants+weather, R²≈0.43 | Conditional | Leaky split; honest held-out R²≈0.25–0.30 (Phase C). |
 | 7 | Model is practically useful for ozone estimation | Conditional | Beats spatial baselines (R²≈0 → 0.30) but not temporal persistence (0.79) (Phase C). |
 | 8 | Weather and pollutants both inform ozone | Supported | Ablations 0.14 / 0.13 / 0.25 (Phase C). |

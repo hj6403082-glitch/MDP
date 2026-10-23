@@ -9,7 +9,8 @@ verdict) and **`manuscript/READINESS.md`** (publication-readiness).
 ## Executable analyses (`audit/*.py` → `audit/reports/`)
 | Phase | Script | What it establishes |
 |-------|--------|---------------------|
-| A | `data_audit.py` | Data QC: 66% grid completeness, no units (CO mg/µg mix), weak coverage, geography |
+| A | `data_audit.py` | Data QC: 66% grid completeness, units not stored, weak coverage, geography |
+| A2 | `phase_a2_units.py` + `fetch_units.py` | Units: CO is uniform mg/m³ (not a mix — correction); 35 outliers flagged; cleaning resolves CO clustering; key-based unit verification tool |
 | B | `analytic_pareto.py` + `tests/test_phaseB_guards.py` | All 19 "optimal" policies dominated by the exact front; code guards tested |
 | C | `phase_c_predictive_eval.py` | Leakage-safe R²≈0.25–0.30 (vs 0.41 leaky); persistence 0.79; ablations |
 | D | `phase_d_causal_stability.py` | NO→ozone stable; PM2.5 edges confounded by weather; order prior-sensitive |

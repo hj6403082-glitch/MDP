@@ -20,7 +20,7 @@ repository (code, data, saved artifacts) with executable checks in `audit/`.
 | 10 | Predictive eval uses random row split | **Confirmed** | `phase2_predictive.py`: `data.randomSplit(...)`. |
 | 11 | Completeness conditional on existing rows; ~66.1% of 204×8760 | **Confirmed** | `data_audit.py`: grid completeness **66.06%**; 37 stations <50% within-year. |
 | 12 | Timestamps span 2024-12-31 18:00Z → 2025-12-30 17:00Z | **Confirmed** | Exact span reproduced; IST/UTC boundary effect documented in QC report §1. |
-| 13 | Unit metadata discarded, unvalidated | **Confirmed & strengthened** | No unit columns. **CO max 1490 vs p99.9 = 7.31** → empirical signature of mixed mg/m³ vs µg/m³. |
+| 13 | Unit metadata discarded, unvalidated | **Confirmed (with a correction)** | No unit columns; units unverified. CO max 1490 vs p99.9 = 7.31 initially read as a mg/µg mix, but Phase A2 (`phase_a2_units.py`) shows CO is a **uniform mg/m³ regime** across stations (the 1490 is 0.003% sporadic spikes, not a unit mix). The over-statement is **withdrawn**; CO is on mg/m³ vs others' µg/m³ scale, and a few non-physical outliers exist. |
 | 14 | Workers `load_study` without sampler → defaults to TPE, not NSGA-II | **Confirmed** | `phase3_optimization.py` lines 240/257 call `load_study(study_name, storage)` with no `sampler`. Saved "Pareto" set was produced by the default sampler on workers, not the driver's NSGA-II. |
 | 15 | SQLite default despite multi-node intent | **Confirmed** | `MDP_OPTUNA_STORAGE` defaults to `sqlite:///db.sqlite3`. |
 | 16 | Narrative overstates apportionment, mechanism, SHAP "validation", optimality | **Confirmed** | See §C claim-to-evidence; all four overstatements present in prior README/results text. |

@@ -1,0 +1,16 @@
+station,pollutant,flagged_over_ceiling,flagged_negative,ceiling
+telemetry_IN_10599.parquet,co,1,0,50
+telemetry_IN_235.parquet,so2,6,0,1000
+telemetry_IN_407.parquet,co,1,0,50
+telemetry_IN_407.parquet,so2,1,0,1000
+telemetry_IN_5408.parquet,so2,1,0,1000
+telemetry_IN_5541.parquet,co,2,0,50
+telemetry_IN_5645.parquet,so2,1,0,1000
+telemetry_IN_5665.parquet,so2,2,0,1000
+telemetry_IN_5667.parquet,so2,3,0,1000
+telemetry_IN_6928.parquet,so2,6,0,1000
+telemetry_IN_6956.parquet,so2,1,0,1000
+telemetry_IN_6964.parquet,so2,6,0,1000
+telemetry_IN_6982.parquet,co,2,0,50
+telemetry_IN_7005.parquet,so2,1,0,1000
+telemetry_IN_8190.parquet,so2,1,0,1000

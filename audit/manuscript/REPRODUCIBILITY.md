@@ -23,6 +23,8 @@ outputs are in `results/out/`. All audit outputs go to `audit/reports/`.
 
 ```bash
 python audit/data_audit.py                 # Phase A: QC report + data dictionary tables
+python audit/phase_a2_units.py             # Phase A2: unit inference, cleaning, CO sensitivity
+# export OPENAQ_API_KEY=... ; python audit/fetch_units.py   # authoritative per-sensor units (optional)
 python audit/analytic_pareto.py            # Phase B: exact front vs saved policies
 python -m pytest tests/test_phaseB_guards.py -q   # Phase B: correctness tests
 python audit/phase_c_predictive_eval.py    # Phase C: leakage-safe evaluation  (~min)

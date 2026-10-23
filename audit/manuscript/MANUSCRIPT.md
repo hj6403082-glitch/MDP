@@ -59,12 +59,16 @@ SO₂ were collected from the OpenAQ v3 API for 204 Indian stations with data in
 intermittent (sensor gaps) and below-detection (indistinguishable — no
 detection-limit metadata).
 
-**Quality caveats (audit §A).** Measurement **units are not preserved**; CO shows
-a maximum of 1490 against a 99.9th percentile of 7.31, the signature of mixed
-mg/m³ vs µg/m³ reporting. Several series show round caps (NO/NO₂/O₃ ≈ 500,
-PM2.5 = 1000), suggesting instrument saturation. Weather is **modelled**, not
-observed. The station network is urban and Delhi-NCR-heavy, so it is **not**
-nationally representative. VOCs are **structurally absent**.
+**Quality caveats (audit §A, §A2).** Measurement **units are not preserved** and
+are therefore unverified. A per-station check shows CO is a uniform mg/m³-scale
+regime (not a cross-station mg/µg mix, correcting an initial reading); CO is thus
+~×1000 apart from the µg/m³ pollutants, so absolute cross-pollutant magnitudes
+are not comparable. A small number of non-physical outliers (35 flagged) and
+round saturation caps (NO/NO₂/O₃ ≈ 500, PM2.5 = 1000) are present. Screening
+those outliers materially changes CO's correlations and resolves its clustering
+instability (§4.3). Weather is **modelled**, not observed. The network is urban
+and Delhi-NCR-heavy — **not** nationally representative. VOCs are **structurally
+absent**.
 
 ## 3. Methods
 
@@ -108,10 +112,14 @@ the pollutant-only model but, once weather is included, temperature → PM2.5 an
 humidity → ozone dominate — the pollutant-only graph was **confounded**. SO₂ edges
 are unstable (frequency ≤ 0.5). The recovered order depends on the prior.
 
-**4.3 Grouping (audit §E).** Silhouette is weak (0.26 here; 0.39 in the pipeline's
-imputed run). Core groups {NO, NO₂, PM10, PM2.5} and {O₃, SO₂} are bootstrap-
-stable, but CO flips between clusters (co-assignment 0.72/0.28), consistent with
-its unit problem. The partition is a convenience split of a continuous structure.
+**4.3 Grouping (audit §E, §A2).** Silhouette is weak (0.26 raw; 0.39 in the
+pipeline's imputed run). Core groups {NO, NO₂, PM10, PM2.5} and {O₃, SO₂} are
+bootstrap-stable; on raw data CO flipped between clusters (co-assignment
+0.72/0.28). This instability was an **outlier artefact**: after flagging 35
+non-physical values, CO's correlations with the combustion family rise sharply
+(e.g. CO–NO 0.14→0.42) and CO joins {CO, NO, NO₂, PM10, PM2.5} at co-assignment
+1.0 (silhouette 0.36). The grouping is still a weak convenience partition, but a
+physically coherent and now-stable one.
 
 **4.4 Scenarios (audit §F).** The frontier is a short near-linear trade-off driven
 almost entirely by NO; SO₂ and VOC are inert (VOC is not even fitted). The

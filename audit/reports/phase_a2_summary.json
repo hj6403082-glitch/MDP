@@ -1,0 +1,23 @@
+{
+  "total_flagged_nonphysical": 35,
+  "cleaned_silhouette": 0.35784058176538736,
+  "co_coassign_cleaned": {
+    "no": 1.0,
+    "no2": 1.0,
+    "ozone": 0.0,
+    "pm10": 1.0,
+    "pm25": 1.0,
+    "so2": 0.0
+  },
+  "co_unit_regime": "single (mg/m^3, inferred/unverified)",
+  "co_values_over_20_pct": 0.0032,
+  "saturation_caps": {
+    "no": 38,
+    "no2": 0,
+    "ozone": 12,
+    "pm25": 142,
+    "pm10": 3,
+    "so2": 0
+  },
+  "max_co_corr_change_after_cleaning": 0.281
+}
