@@ -70,13 +70,13 @@ causal validation.
 | Phase | Status |
 |-------|--------|
 | A — reproducible data audit | **Done** (`audit/data_audit.py`, `audit/reports/`) |
-| B — exact Pareto / optimality | **Done for the linear model** (`audit/analytic_pareto.py`): optimizer is dominated; analytic front is closed-form |
-| B — code/reproducibility repairs + tests | In progress |
-| C — leakage-safe temporal/spatial evaluation | Planned |
-| D — identification gate (reframe to scenario analysis) | Planned |
-| E — apportionment reframe (exploratory grouping) | Planned |
-| F — defensible scenario analysis w/ uncertainty | Planned |
-| G — manuscript + claim-to-evidence + readiness | Planned |
+| B — exact Pareto / optimality | **Done** (`audit/analytic_pareto.py`): optimizer dominated; analytic front closed-form |
+| B — code/reproducibility repairs + tests | **Done** (phase3/phase2 fixes; `tests/test_phaseB_guards.py` pass) |
+| C — leakage-safe temporal/spatial evaluation | **Done** (`audit/phase_c_predictive_eval.py`): held-out R²≈0.25–0.30 |
+| D — identification gate + LiNGAM stability | **Done** (`audit/phase_d_*`): not identifiable; NO→ozone stable, rest confounded |
+| E — apportionment reframe + grouping stability | **Done** (`audit/phase_e_*`): PMF unsupportable; weak grouping |
+| F — defensible scenario analysis w/ uncertainty | **Done** (`audit/phase_f_scenario_analysis.py`): closed-form front + band |
+| G — manuscript + claim-to-evidence + readiness | **Done** (`audit/manuscript/`) |
 
 ## D. External requirements / approvals (not yet actioned)
 
