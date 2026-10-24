@@ -13,6 +13,7 @@ verdict) and **`manuscript/READINESS.md`** (publication-readiness).
 | A2 | `phase_a2_units.py` + `fetch_units.py` | Units: CO is uniform mg/m³ (not a mix — correction); 35 outliers flagged; cleaning resolves CO clustering; key-based unit verification tool |
 | B | `analytic_pareto.py` + `tests/test_phaseB_guards.py` | All 19 "optimal" policies dominated by the exact front; code guards tested |
 | C | `phase_c_predictive_eval.py` | Leakage-safe R²≈0.25–0.30 (vs 0.41 leaky); persistence 0.79; ablations |
+| C2 | `phase_c2_prediction_plus.py` | Pollutants add only +0.12 R² beyond weather; station-mean gain is memorisation; forecasting beats persistence by just +0.05 |
 | D | `phase_d_causal_stability.py` | NO→ozone stable; PM2.5 edges confounded by weather; order prior-sensitive |
 | E | `phase_e_grouping.py` | Weak clustering (silhouette 0.26–0.39); CO unstable; not apportionment |
 | F | `phase_f_scenario_analysis.py` | Closed-form concentration-scenario frontier + uncertainty (not emissions) |

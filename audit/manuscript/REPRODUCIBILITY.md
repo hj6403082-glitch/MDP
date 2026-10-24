@@ -28,6 +28,7 @@ python audit/phase_a2_units.py             # Phase A2: unit inference, cleaning,
 python audit/analytic_pareto.py            # Phase B: exact front vs saved policies
 python -m pytest tests/test_phaseB_guards.py -q   # Phase B: correctness tests
 python audit/phase_c_predictive_eval.py    # Phase C: leakage-safe evaluation  (~min)
+python audit/phase_c2_prediction_plus.py   # Phase C2: incremental value, harmonics, t+1h forecast
 python audit/phase_d_causal_stability.py --boot 80    # Phase D: LiNGAM stability (~min)
 python audit/phase_e_grouping.py --boot 150           # Phase E: grouping stability
 python audit/phase_f_scenario_analysis.py --boot 80   # Phase F: scenario frontier + figure
@@ -44,6 +45,7 @@ never tuned on any test set.
 | A | data_audit.py | data_quality_report.md, audit_summary.json, *.csv |
 | B | analytic_pareto.py | pareto_comparison.json, exact_pareto_front.csv |
 | C | phase_c_predictive_eval.py | phase_c_predictive_eval.md, phase_c_metrics.csv |
+| C2 | phase_c2_prediction_plus.py | phase_c2_prediction_plus.md, phase_c2_metrics.csv, phase_c2_summary.json |
 | D | phase_d_causal_stability.py | phase_d_causal_stability.md, phase_d_bootstrap_edges.csv, phase_d_identification_gate.md |
 | E | phase_e_grouping.py | phase_e_grouping.md, phase_e_coassignment.csv, phase_e_apportionment_assessment.md |
 | F | phase_f_scenario_analysis.py | phase_f_scenario_analysis.md, phase_f_scenario_front.png/.csv, phase_f_scenario_summary.json |
