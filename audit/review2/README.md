@@ -10,6 +10,8 @@ show execution and a rough draft, add pseudocode, and justify every tool.*
 | **Software & tool justification** | `SOFTWARE_STACK.md` | "explain importance of each code and software, why we are using it" |
 | **Execution evidence** | §V of `ROUGH_DRAFT.md` + `audit/reports/` | "next review wants execution" |
 | **Usefulness to the field** | `SIGNIFICANCE.md` | "it should be helpful / come in use to the area the research papers are on" |
+| **Publication roadmap** | `PUBLICATION_PLAN.md` | the concrete path from here to a submitted paper, with the one blocking item named |
+| **Figures** | `../reports/figures/` (via `../make_figures.py`) | 5 publication figures regenerable from the committed data |
 
 Supporting audit artifacts (unchanged): `audit/manuscript/` (full manuscript,
 claim-to-evidence, original-vs-corrected, bibliography, readiness), `audit/reports/`

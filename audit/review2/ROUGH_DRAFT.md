@@ -137,6 +137,11 @@ in `SOFTWARE_STACK.md`. Four analyses:
 
 ## VI. Results
 
+*Figures (in `audit/reports/figures/`, regenerable via `audit/make_figures.py`):
+Fig. 1 data coverage; Fig. 2 R² by evaluation protocol (leakage); Fig. 3 incremental
+value of pollutants beyond weather; Fig. 4 bootstrap edge stability; Fig. 5 Pareto
+dominance of the 19 saved policies.*
+
 **A. Prediction.** Leakage inflates skill: random split R² ≈ 0.41, but honest
 evaluation gives R² ≈ 0.25 (blocked-temporal; 90% CI 0.22–0.28) and 0.30 (unseen
 stations; CI 0.19–0.40), down to 0.22 strict. Decomposition (Phase C2): weather

@@ -32,6 +32,7 @@ python audit/phase_c2_prediction_plus.py   # Phase C2: incremental value, harmon
 python audit/phase_d_causal_stability.py --boot 80    # Phase D: LiNGAM stability (~min)
 python audit/phase_e_grouping.py --boot 150           # Phase E: grouping stability
 python audit/phase_f_scenario_analysis.py --boot 80   # Phase F: scenario frontier + figure
+python audit/make_figures.py                          # publication figures -> audit/reports/figures/
 ```
 
 Determinism: every script fixes `SEED = 42`. Bootstrap counts are CLI flags;
