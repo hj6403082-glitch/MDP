@@ -1,0 +1,8 @@
+pollutant,inferred_unit,n_stations,median_min,median_max,nonzero_span_x
+co,mg/m^3 (unverified),196,0.0,2.84,47.3
+no,ug/m^3 (unverified),197,0.0,48.2,65.8
+no2,ug/m^3 (unverified),198,0.0,79.7,538.5
+ozone,ug/m^3 (unverified),190,0.0,61.3,50.7
+pm10,ug/m^3 (unverified),194,6.47,493.0,76.2
+pm25,ug/m^3 (unverified),202,0.0,133.0,42.8
+so2,ug/m^3 (unverified),190,0.0,52.5,92.6

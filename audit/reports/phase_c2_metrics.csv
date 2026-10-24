@@ -1,0 +1,8 @@
+block,model,r2,rmse,n
+contemporaneous,weather only,0.14,28.38,343153
+contemporaneous,pollutants only,0.131,28.53,343153
+contemporaneous,weather + pollutants,0.257,26.39,343153
+contemporaneous,+ time harmonics,0.337,24.92,343153
+contemporaneous,+ station mean (train-only),0.413,23.44,343153
+forecast+1h,persistence,0.812,13.25,334791
+forecast+1h,xgboost(+lags),0.865,11.22,334791

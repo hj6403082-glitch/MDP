@@ -158,7 +158,9 @@ def fit_direct_lingam(pdf, columns: List[str], primary: List[str],
     model = DirectLiNGAM(prior_knowledge=prior, random_state=cfg.seed)
     model.fit(Xz)
     # adjacency_matrix_[i, j] = coefficient of path j -> i in x = Bx + e.
-    return model, np.asarray(model.adjacency_matrix_)
+    # Return the fitted scalers so z-space results can be mapped back to the
+    # original concentration units (and so the run is reproducible).
+    return model, np.asarray(model.adjacency_matrix_), mean, std
 
 
 def extract_dag_and_sem(adjacency, columns: List[str], causal_order: List[int],
@@ -219,7 +221,7 @@ def run_causal_discovery(config: Optional[PipelineConfig] = None, spark=None) ->
         columns = primary + secondary
 
         pdf = collect_bounded_sample(df, columns, cfg.causal)
-        model, adjacency = fit_direct_lingam(
+        model, adjacency, scaler_mean, scaler_std = fit_direct_lingam(
             pdf, columns, primary, secondary, cfg.causal
         )
         causal_order = [int(i) for i in model.causal_order_]
@@ -237,6 +239,38 @@ def run_causal_discovery(config: Optional[PipelineConfig] = None, spark=None) ->
                 .parquet(f"{base}/{cfg.output.causal_dag_subpath}")
         spark.createDataFrame(sems).coalesce(1).write.mode("overwrite") \
             .parquet(f"{base}/{cfg.output.causal_sem_subpath}")
+
+        # Persist a reproducibility manifest: the fitted variable list and order,
+        # per-variable scaler (mean/std) so z-space maps back to concentrations,
+        # the full standardized adjacency, thresholds, seed, prior-knowledge flag,
+        # sample size and library versions. Without this the response model (and
+        # any downstream scenario analysis) is not reproducible or interpretable.
+        import json as _json
+        import sys as _sys
+        try:
+            import lingam as _lingam
+            _lingam_ver = getattr(_lingam, "__version__", "unknown")
+        except Exception:  # noqa: BLE001
+            _lingam_ver = "unknown"
+        manifest = {
+            "schema_version": 1,
+            "columns": list(columns),
+            "causal_order": ordered_names,
+            "scaler_mean": {c: float(m) for c, m in zip(columns, scaler_mean)},
+            "scaler_std": {c: float(s) for c, s in zip(columns, scaler_std)},
+            "adjacency_standardized": [[float(v) for v in row] for row in adjacency],
+            "edge_threshold": float(cfg.causal.edge_threshold),
+            "seed": int(cfg.causal.seed),
+            "used_prior_knowledge": bool(cfg.causal.use_prior_knowledge),
+            "n_samples_used": int(pdf.shape[0]),
+            "standardized_space": True,
+            "space_note": ("coefficients and interventions are in standardized "
+                           "AMBIENT-CONCENTRATION z-space; not emissions"),
+            "versions": {"python": _sys.version.split()[0], "lingam": _lingam_ver},
+        }
+        spark.createDataFrame([(_json.dumps(manifest, sort_keys=True),)],
+                              ["manifest_json"]).coalesce(1).write.mode("overwrite") \
+            .text(f"{base}/{cfg.output.causal_manifest_subpath}")
 
         result = {
             "columns": columns,
