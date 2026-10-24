@@ -60,6 +60,15 @@ hypothesis, not an identified effect. (4) A demonstration that a published
 metaheuristic "optimizer" was dominated by a closed-form solution. (5) An explicit
 account of the evidence each stronger claim would need.
 
+**Significance — who this helps.** The work is useful to the air-quality and
+environmental-AI community in three concrete ways: a real, open, reproducible
+**dataset and pipeline** others can build on; a reusable **leakage-safe evaluation
+recipe and diagnostic set** (bootstrap edge stability, meteorology-confounding
+tests, exact-vs-metaheuristic checks) that this field often omits; and an honest,
+evidence-backed **account of what imperfect regulatory data can and cannot support**,
+including a testable NO–O₃ hypothesis and a requirements list for causal source
+apportionment. A full area-by-area breakdown is in `audit/review2/SIGNIFICANCE.md`.
+
 ## II. Related Work (positioning)
 
 Our methods are standard; our contribution is their *honest application and

@@ -9,6 +9,7 @@ show execution and a rough draft, add pseudocode, and justify every tool.*
 | **Pseudocode** for every stage | `PSEUDOCODE.md` | "we need to write pseudo code too" |
 | **Software & tool justification** | `SOFTWARE_STACK.md` | "explain importance of each code and software, why we are using it" |
 | **Execution evidence** | §V of `ROUGH_DRAFT.md` + `audit/reports/` | "next review wants execution" |
+| **Usefulness to the field** | `SIGNIFICANCE.md` | "it should be helpful / come in use to the area the research papers are on" |
 
 Supporting audit artifacts (unchanged): `audit/manuscript/` (full manuscript,
 claim-to-evidence, original-vs-corrected, bibliography, readiness), `audit/reports/`
