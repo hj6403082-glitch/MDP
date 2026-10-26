@@ -19,10 +19,15 @@ workshop contribution after the prioritized work below.
 
 ## What each stronger claim would require (prioritized)
 
-1. **Unit harmonization (blocking).** Re-collect OpenAQ v3 retaining per-sensor
-   units, detection limits, provider, and QA flags; convert to common units;
-   re-run everything. Until then cross-station magnitudes (esp. CO) are unreliable.
-   *(Free but a large re-download; flagged, not performed — needs approval.)*
+1. **Units — VERIFIED (was blocking; now characterized).** Authoritative OpenAQ
+   per-sensor metadata (`audit/reports/units_verification.md`) shows NO (ppb),
+   ozone, PM2.5, PM10 (µg/m³) are unit-consistent, while CO, NO₂, SO₂ carry
+   duplicate ppb + µg/m³ sensors at ~all stations with no per-row provenance, so
+   their stored unit is **indeterminate**. The two headline results depend only on
+   unit-consistent variables and stand. Remaining work: restrict/caveat CO, NO₂, SO₂
+   in the writeup, and (for a stronger dataset) re-collect retaining per-sensor unit
+   and convert ppb→µg/m³ before pooling. No large re-download needed for the current
+   paper — the verification was ~204 light metadata calls.
 2. **Prediction, done right.** Keep the leakage-safe protocol; add a meteorology-
    normalized target, hour-of-day/station fixed effects, and a proper forecasting
    variant if forecasting is the goal; report against persistence honestly.

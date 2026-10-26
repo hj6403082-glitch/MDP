@@ -181,6 +181,37 @@ def fig_pareto():
     save(fig, "fig5_pareto_dominance.png")
 
 
+# ---- Fig 6: authoritative units verification ------------------------------
+def fig_units():
+    p = f"{R}/units_authoritative.csv"
+    if not os.path.exists(p):
+        print("skip fig6 (no units_authoritative.csv)"); return
+    u = pd.read_csv(p)
+    order = ["pm25","pm10","no","ozone","co","no2","so2"]
+    ppb_only=[]; ug_only=[]; both=[]; labels=[]
+    for pol in order:
+        sub = u[u.parameter==pol]
+        g = sub.groupby("station_id").unit.agg(set)
+        b = sum("ppb" in s and "µg/m³" in s for s in g)
+        po = sum(s=={"ppb"} for s in g)
+        uo = sum("ppb" not in s for s in g)   # ug/m3 (or ppm) only
+        both.append(b); ppb_only.append(po); ug_only.append(uo)
+        labels.append(pol.upper())
+    fig, ax = plt.subplots(figsize=(8.6, 4.3))
+    y = np.arange(len(order))
+    ax.barh(y, ug_only, color=OI["green"], label="µg/m³ only (mass conc.)")
+    ax.barh(y, ppb_only, left=ug_only, color=OI["sky"], label="ppb only (mixing ratio)")
+    ax.barh(y, both, left=np.array(ug_only)+np.array(ppb_only), color=OI["verm"],
+            label="BOTH units at same station (indeterminate)")
+    ax.set_yticks(y); ax.set_yticklabels(labels); ax.invert_yaxis()
+    ax.set_xlabel("stations"); ax.set_title(
+        "Authoritative units: CO, NO2, SO2 carry duplicate ppb + µg/m³ sensors; "
+        "NO/ozone/PM uniform")
+    ax.legend(frameon=False, fontsize=8.3, loc="lower right")
+    save(fig, "fig6_units_verification.png")
+
+
 if __name__ == "__main__":
     fig_coverage(); fig_leakage(); fig_incremental(); fig_edges(); fig_pareto()
+    fig_units()
     print("\nAll figures in", FIG)

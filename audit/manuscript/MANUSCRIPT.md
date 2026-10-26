@@ -59,16 +59,20 @@ SO₂ were collected from the OpenAQ v3 API for 204 Indian stations with data in
 intermittent (sensor gaps) and below-detection (indistinguishable — no
 detection-limit metadata).
 
-**Quality caveats (audit §A, §A2).** Measurement **units are not preserved** and
-are therefore unverified. A per-station check shows CO is a uniform mg/m³-scale
-regime (not a cross-station mg/µg mix, correcting an initial reading); CO is thus
-~×1000 apart from the µg/m³ pollutants, so absolute cross-pollutant magnitudes
-are not comparable. A small number of non-physical outliers (35 flagged) and
-round saturation caps (NO/NO₂/O₃ ≈ 500, PM2.5 = 1000) are present. Screening
-those outliers materially changes CO's correlations and resolves its clustering
-instability (§4.3). Weather is **modelled**, not observed. The network is urban
-and Delhi-NCR-heavy — **not** nationally representative. VOCs are **structurally
-absent**.
+**Quality caveats (audit §A, §A2, units verification).** Measurement units were
+**verified against the authoritative OpenAQ per-sensor metadata**. NO (ppb), ozone,
+PM2.5 and PM10 (µg/m³) are unit-consistent across the network. CO, NO₂ and SO₂,
+however, carry **duplicate sensors reporting in both ppb and µg/m³ at almost every
+station** (e.g. CO at 183/198 stations), and the stored dataset keeps a single value
+per pollutant per station-hour with no record of which sensor produced it — so for
+these three the unit is **indeterminate** and cannot be harmonized post hoc. (This
+corrects an earlier value-based inference that CO was uniform; the authoritative
+metadata governs.) We therefore restrict quantitative cross-station claims to the
+unit-consistent pollutants; our two headline results (ozone prediction, NO–O₃)
+depend only on those. A small number of non-physical outliers (35 flagged) and round
+saturation caps (NO/NO₂/O₃ ≈ 500, PM2.5 = 1000) are present. Weather is **modelled**,
+not observed. The network is urban and Delhi-NCR-heavy — **not** nationally
+representative. VOCs are **structurally absent**.
 
 ## 3. Methods
 
@@ -119,7 +123,10 @@ bootstrap-stable; on raw data CO flipped between clusters (co-assignment
 non-physical values, CO's correlations with the combustion family rise sharply
 (e.g. CO–NO 0.14→0.42) and CO joins {CO, NO, NO₂, PM10, PM2.5} at co-assignment
 1.0 (silhouette 0.36). The grouping is still a weak convenience partition, but a
-physically coherent and now-stable one.
+physically coherent and now-stable one. (Caveat: CO and NO₂ are unit-indeterminate
+per the units verification, so their grouping behaviour may partly reflect the
+ppb/µg/m³ mix rather than chemistry; the stable {O₃, SO₂} vs combustion split does
+not depend on CO.)
 
 **4.4 Scenarios (audit §F).** The frontier is a short near-linear trade-off driven
 almost entirely by NO; SO₂ and VOC are inert (VOC is not even fitted). The

@@ -33,10 +33,11 @@ Everything below assumes Path A.
 - [x] Leakage-safe evaluation protocol (blocked-temporal, leave-stations-out, strict)
 - [x] Honest baselines (mean, climatology, persistence) + bootstrap CIs
 - [x] Code correctness guards (pytest), fixed seeds, reproducibility guide
-- [ ] **[YOU] Verify measurement units** — the one *blocking* data gap. Needs your
-      OpenAQ key: `export OPENAQ_API_KEY=...; python audit/fetch_units.py`, then
-      reconcile against `audit/reports/unit_inference.csv`. Until done, cross-station
-      CO magnitudes are not publication-grade.
+- [x] **Verify measurement units — DONE.** Authoritative OpenAQ metadata fetched
+      (`fetch_units.py`) and reconciled (`units_verification.md`): NO, ozone, PM2.5,
+      PM10 unit-consistent; CO, NO₂, SO₂ have duplicate ppb + µg/m³ sensors with no
+      per-row provenance → indeterminate. Headline results rest only on
+      unit-consistent variables. Remaining: restrict/caveat CO, NO₂, SO₂ in the text.
 
 ### B. Analysis strengthening
 - [x] Meteorology-normalized / incremental-value analysis (Phase C2)
@@ -80,7 +81,8 @@ Everything below assumes Path A.
 
 - **Done:** execution, evaluation, analysis, figures, full rough draft, pseudocode,
   tool justification, reproducibility. The *scientific* work is largely complete.
-- **Only real blocker we can't do for you:** verifying units (needs your API key).
+- **Units blocker — now CLEARED:** verified against authoritative OpenAQ metadata
+  (`units_verification.md`); headline results rest only on unit-consistent variables.
 - **Team decisions:** which paper (Path A), which venue, author list.
 
 ## Realistic timeline
