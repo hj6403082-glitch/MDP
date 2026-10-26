@@ -3,8 +3,8 @@
 > **Status:** rough draft for Review 2. Every number is produced by the committed
 > code on the real dataset (see `audit/reports/`). Framing is deliberately honest
 > and narrowed — see §VIII Limitations and the claim-to-evidence table. Citations
-> are real, foundational works (see `audit/manuscript/BIBLIOGRAPHY.md`); DOIs are
-> to be confirmed against publisher records before any submission.
+> are real, foundational works (see `audit/manuscript/BIBLIOGRAPHY.md`); all 12
+> DOIs/identifiers were verified against authoritative records on 2026-10-26.
 
 ---
 
@@ -216,5 +216,5 @@ causal identification; and extend the predictive model to multi-step forecasting
 See `audit/manuscript/BIBLIOGRAPHY.md` (Shimizu et al. 2006/2011; Pearl 2009; Chen &
 Guestrin 2016; Lundberg & Lee 2017; Deb et al. 2002; Akiba et al. 2019; Zaharia et
 al. 2016; Kaufman et al. 2012; Seinfeld & Pandis 2016; Paatero & Tapper 1994; Grange
-& Carslaw 2019; OpenAQ; Open-Meteo). **DOIs/identifiers are drafted there** (resolve
-each at doi.org); confirm every one before submission.
+& Carslaw 2019; OpenAQ; Open-Meteo). **All 12 DOIs/identifiers verified against
+authoritative records (2026-10-26)**; re-confirm at final submission.
