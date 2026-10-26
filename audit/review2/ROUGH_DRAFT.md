@@ -10,30 +10,36 @@
 
 ## Title
 
-**What Can and Cannot Be Learned from Pooled Regulatory Air-Quality Data: A Leakage-Safe Machine-Learning Case Study over 204 Indian Monitoring Stations**
+**An Open, Leakage-Safe Benchmark for Multi-Pollutant Air-Quality Machine Learning over 204 Indian Monitoring Stations**
 
-*Alternative title: Exploratory Machine Learning on Urban Air-Quality Monitoring Data — Predictive Baselines, Associational Structure, and Model-Based Scenarios.*
+*Alternative title: What Can and Cannot Be Learned from Pooled Regulatory Air-Quality Data — A Leakage-Safe Machine-Learning Case Study over 204 Indian Monitoring Stations.*
 
 > We moved away from the original title *"Causal Machine Learning for Multi-Pollutant
 > Source Apportionment and Control Optimization"* because our own evaluation could
 > not support the words *causal*, *source apportionment*, or *control optimization*
-> (§VIII). Narrowing the claim rather than overstating it is itself the contribution.
+> (§VIII). We reframe the work as a **benchmark and resource contribution**: an open
+> dataset, a leakage-safe evaluation protocol, and honest baselines others can build
+> on. Narrowing the claim rather than overstating it is itself the contribution.
 
-**Keywords:** air quality; machine learning; data leakage; causal discovery;
-DirectLiNGAM; XGBoost; multi-objective optimization; reproducibility.
+**Keywords:** air quality; open benchmark; machine learning; data leakage;
+causal discovery; DirectLiNGAM; XGBoost; multi-objective optimization;
+reproducibility; India.
 
 ---
 
 ## Abstract
 
-We assemble one year (2025) of hourly observations from 204 Indian air-quality
-monitoring stations (OpenAQ) merged with co-located modelled meteorology
-(Open-Meteo) — about 1.18 million station-hours — and ask what a machine-learning
-pipeline can and cannot defensibly conclude from it. Under **leakage-safe**
-evaluation, a gradient-boosted model estimates contemporaneous ozone with held-out
-R² ≈ 0.25 (blocked-temporal) to 0.30 (unseen stations), well below the 0.41–0.43
-from a leaky random split; pollutants add only ≈ +0.12 R² *beyond weather*, and a
-one-hour-ahead forecast beats a persistence baseline by only +0.05. Exploratory
+We release an **open benchmark** for multi-pollutant air-quality machine learning:
+one year (2025) of hourly observations from 204 Indian monitoring stations (OpenAQ)
+merged with co-located modelled meteorology (Open-Meteo) — about 1.18 million
+station-hours — together with a **leakage-safe evaluation protocol** and honest
+baselines. Measurement units are **verified against the authoritative OpenAQ sensor
+metadata**: NO, ozone, PM2.5 and PM10 are unit-consistent, while CO, NO₂ and SO₂
+carry duplicate ppb/µg/m³ sensors and are treated as unit-indeterminate. Under
+leakage-safe evaluation, a gradient-boosted model estimates contemporaneous ozone
+with held-out R² ≈ 0.25 (blocked-temporal) to 0.30 (unseen stations), well below the
+0.41–0.43 from a leaky random split; pollutants add only ≈ +0.12 R² *beyond weather*,
+and a one-hour-ahead forecast beats a persistence baseline by only +0.05. Exploratory
 causal-structure discovery (DirectLiNGAM) recovers a single bootstrap-stable
 association consistent with local NO–O₃ titration, but the wider graph is confounded
 by omitted meteorology and is not causally identified. K-means groups co-varying
@@ -53,12 +59,14 @@ causal structure → policy optimization*. Many applied papers present each link
 established. We instead **test** that narrative critically on a large but imperfect
 regulatory dataset and report, with uncertainty, where it holds and where it breaks.
 
-**Contributions.** (1) A reproducible PySpark/Dataproc pipeline over 204 stations.
-(2) A leakage-safe re-evaluation showing how random splitting inflates apparent
-skill. (3) One stable, chemically-plausible association (NO–O₃) reported as a
-hypothesis, not an identified effect. (4) A demonstration that a published
-metaheuristic "optimizer" was dominated by a closed-form solution. (5) An explicit
-account of the evidence each stronger claim would need.
+**Contributions.** (1) An **open, reproducible dataset + PySpark/Dataproc pipeline**
+over 204 stations, with units verified against authoritative sensor metadata.
+(2) A **leakage-safe evaluation protocol** and honest baselines others must beat,
+showing how random splitting inflates apparent skill. (3) One stable,
+chemically-plausible association (NO–O₃) reported as a hypothesis, not an identified
+effect. (4) A demonstration that a published metaheuristic "optimizer" was dominated
+by a closed-form solution. (5) An explicit account of the evidence each stronger
+claim would need.
 
 **Significance — who this helps.** The work is useful to the air-quality and
 environmental-AI community in three concrete ways: a real, open, reproducible
@@ -102,8 +110,12 @@ Hourly CO, NO, NO₂, O₃, PM10, PM2.5 and SO₂ for 204 Indian stations with 2
 (OpenAQ v3), each merged with hourly Open-Meteo reanalysis (temperature, relative
 humidity, wind speed, surface pressure) at the nearest ~0.1° grid cell. Scale:
 **1,180,551 station-hours**, ≈ 66% of a full 204 × 8,760 grid; 37 stations < 50%
-within-year coverage. Caveats: units are not preserved and thus unverified (CO is a
-uniform mg/m³ regime, ≈ ×1000 from the µg/m³ species); 35 non-physical outliers and
+within-year coverage. **Units were verified against the authoritative OpenAQ
+per-sensor metadata:** NO (ppb), O₃, PM2.5 and PM10 (µg/m³) are unit-consistent,
+whereas CO, NO₂ and SO₂ carry duplicate ppb *and* µg/m³ sensors at almost every
+station (e.g. CO at 183/198) with no per-row provenance, so their stored unit is
+**indeterminate**; we therefore restrict quantitative cross-station use to the
+unit-consistent pollutants (Fig. 6). Further caveats: 35 non-physical outliers and
 saturation caps exist; weather is modelled; the network is urban and Delhi-NCR-heavy
 (not nationally representative); VOCs are structurally absent.
 
@@ -140,7 +152,7 @@ in `SOFTWARE_STACK.md`. Four analyses:
 *Figures (in `audit/reports/figures/`, regenerable via `audit/make_figures.py`):
 Fig. 1 data coverage; Fig. 2 R² by evaluation protocol (leakage); Fig. 3 incremental
 value of pollutants beyond weather; Fig. 4 bootstrap edge stability; Fig. 5 Pareto
-dominance of the 19 saved policies.*
+dominance of the 19 saved policies; Fig. 6 authoritative units verification.*
 
 **A. Prediction.** Leakage inflates skill: random split R² ≈ 0.41, but honest
 evaluation gives R² ≈ 0.25 (blocked-temporal; 90% CI 0.22–0.28) and 0.30 (unseen
@@ -158,7 +170,9 @@ the pollutant-only graph was **confounded**. SO₂ edges are unstable (freq ≤ 
 **C. Grouping.** Silhouette weak (0.26 raw, 0.39 imputed). Core groups {NO, NO₂,
 PM10, PM2.5} and {O₃, SO₂} are stable; CO's instability was an **outlier artefact** —
 after flagging 35 values, CO–NO rises 0.14 → 0.42 and CO joins the combustion group
-at co-assignment 1.0. Still a weak convenience partition, now physically coherent.
+at co-assignment 1.0. Still a weak convenience partition, now physically coherent
+(caveat: CO and NO₂ are unit-indeterminate, so their grouping may partly reflect the
+ppb/µg/m³ mix; the stable {O₃, SO₂} vs combustion split does not depend on CO).
 
 **D. Scenarios.** The frontier is a short near-linear trade-off driven almost
 entirely by NO. The published metaheuristic's **19 "optimal" policies are all
@@ -202,4 +216,5 @@ causal identification; and extend the predictive model to multi-step forecasting
 See `audit/manuscript/BIBLIOGRAPHY.md` (Shimizu et al. 2006/2011; Pearl 2009; Chen &
 Guestrin 2016; Lundberg & Lee 2017; Deb et al. 2002; Akiba et al. 2019; Zaharia et
 al. 2016; Kaufman et al. 2012; Seinfeld & Pandis 2016; Paatero & Tapper 1994; Grange
-& Carslaw 2019; OpenAQ; Open-Meteo). DOIs/pages to be confirmed before submission.
+& Carslaw 2019; OpenAQ; Open-Meteo). **DOIs/identifiers are drafted there** (resolve
+each at doi.org); confirm every one before submission.
