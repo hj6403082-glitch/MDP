@@ -183,6 +183,9 @@ class Station:
     longitude: float
     # (sensor_id, pollutant_column) for sensors reporting target pollutants.
     sensors: List[Tuple[int, str]] = field(default_factory=list)
+    # pollutant_column -> reporting unit (e.g. "ug/m3", "mg/m3"). Captured so
+    # measurements are never left unit-less (the first collection discarded it).
+    units: dict = field(default_factory=dict)
 
 
 def _utc_date(value) -> Optional[str]:
@@ -240,14 +243,19 @@ def fetch_country_locations(country_id: int, pause: float, start: str, end: str,
                 skipped_coverage += 1
                 continue  # no data in the requested window -> don't query it
             sensors = []
+            units = {}
             for sensor in loc.get("sensors", []):
-                param = (sensor.get("parameter") or {}).get("name", "").lower()
+                par = sensor.get("parameter") or {}
+                param = par.get("name", "").lower()
                 if param in POLLUTANT_PARAM_MAP:
-                    sensors.append((sensor["id"], POLLUTANT_PARAM_MAP[param]))
+                    col = POLLUTANT_PARAM_MAP[param]
+                    sensors.append((sensor["id"], col))
+                    units[col] = par.get("units") or sensor.get("units")  # capture unit
             if sensors:
                 stations.append(Station(
                     loc_id=loc["id"], name=loc.get("name") or f"loc_{loc['id']}",
-                    latitude=float(lat), longitude=float(lon), sensors=sensors))
+                    latitude=float(lat), longitude=float(lon), sensors=sensors,
+                    units=units))
         logger.info("Locations page %d: %d returned (%d usable so far, %d skipped: no data in window)",
                     page, len(results), len(stations), skipped_coverage)
         if len(results) < PAGE_SIZE:
@@ -462,6 +470,19 @@ def run(args: argparse.Namespace) -> int:
         if n_ok % 25 == 0:
             logger.info("Progress: %d written, %d skipped, %d empty, %d failed",
                         n_ok, n_skip, n_empty, n_fail)
+
+    # Persist a units manifest so measurement units are never lost again.
+    unit_rows = [{"station_id": f"{COUNTRY_ISO}:{s.loc_id}", "pollutant": col,
+                  "unit": s.units.get(col)}
+                 for s in stations for _, col in s.sensors]
+    if unit_rows:
+        import csv as _csv
+        os.makedirs(args.local_dir, exist_ok=True)
+        upath = os.path.join(args.local_dir, "telemetry_units.csv")
+        with open(upath, "w", newline="") as fh:
+            w = _csv.DictWriter(fh, fieldnames=["station_id", "pollutant", "unit"])
+            w.writeheader(); w.writerows(unit_rows)
+        logger.info("Wrote units manifest: %s (%d sensor-units)", upath, len(unit_rows))
 
     logger.info("DONE. written=%d skipped(resume)=%d empty=%d failed=%d",
                 n_ok, n_skip, n_empty, n_fail)

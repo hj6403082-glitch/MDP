@@ -1,0 +1,12 @@
+{
+  "n_stations": 204,
+  "n_rows": 1180551,
+  "span_start_utc": "2024-12-31 18:00:00+00:00",
+  "span_end_utc": "2025-12-30 17:00:00+00:00",
+  "grid_completeness_vs_204x8760": 0.6606181171098576,
+  "duplicate_station_hours": 0,
+  "voc_present": false,
+  "units_stored": false,
+  "weather_source": "open-meteo reanalysis (modelled)",
+  "median_within_year_coverage": 0.766837899543379
+}

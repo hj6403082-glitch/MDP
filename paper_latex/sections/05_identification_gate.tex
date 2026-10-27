@@ -1,0 +1,72 @@
+\section{Discussion: A Scientific Identification Gate}
+\label{sec:gate}
+
+The audit in \cref{sec:results} is not a catalogue of incidental shortcomings; the
+three findings share a common root. A pooled, linear, observational model of ambient
+telemetry cannot, in principle, answer the interventional and apportionment questions
+the original pipeline posed. We formalize this as a four-part \emph{identification
+gate}: criteria that an observational air-quality analysis must pass before causal,
+apportionment or policy language is warranted.
+
+\subsection{Gate 1: structural absence of VOCs}
+Ozone sensitivity is governed by the VOC-to-NO$_x$ ratio
+\citep{sillman1999,monks2015ozone,seinfeld2016atmospheric}. Without continuous
+hydrocarbon speciation---or an observational proxy such as the formaldehyde-to-NO$_2$
+column ratio (HCHO/NO\textsubscript{2}) from satellite retrievals---the VOC-limited and
+NO$_x$-limited regimes are empirically indistinguishable in these data. A model that
+never observes VOCs cannot resolve which regime produced a given ozone value, and so
+cannot attribute an ozone change to a precursor intervention. Our single recovered
+edge, $\mathrm{NO}\rightarrow\mathrm{O_3}<0$, is consistent with this limitation: it is
+the \emph{titration} term, the one piece of ozone chemistry that does not require
+observing VOCs, and it must not be generalized to regional photochemical production.
+
+\subsection{Gate 2: unobserved planetary-boundary-layer confounding}
+The diurnal cycle of the planetary boundary layer (PBL) is a powerful \emph{unobserved
+common cause}. At night and in winter the PBL collapses, trapping fresh emissions in a
+shallow volume and simultaneously raising the measured concentrations of all primary,
+co-emitted species; by day it deepens and dilutes them together. This single latent
+variable induces strong positive correlations among co-emitted pollutants that have
+nothing to do with any direct inter-pollutant causal mechanism, violating the causal
+sufficiency assumption (A4) of \eqref{eq:sem}. The empirical signature is exactly what
+we observe: the particulate and combustion edges of \cref{fig:dag} are stable in the
+pollutant-only graph but collapse once meteorological proxies of mixing are included.
+A spuriously ``discovered'' $\mathrm{CO}\rightarrow\mathrm{PM_{2.5}}$ edge is better read
+as two species responding to a common, unmeasured mixing volume. Mitigation requires
+either direct PBL-height observations or explicit meteorological deconfounding
+\citep{grange2019metnorm,grange2018rf,chernozhukov2018double}.
+
+\subsection{Gate 3: the concentration--emission fallacy}
+This is the decisive gate for policy. The optimizer of \cref{lem:pareto} acts on
+\emph{standardized ambient concentrations}: a recommendation such as
+``$z_{\mathrm{NO_2}}=z_{\min}=-2\sigma$'' is a point on a correlational surface, not an
+emission control. Two failures follow. First, there is no validated map from this
+concentration vector back to a feasible set of sectoral emission reductions; the
+inverse problem is precisely the ill-posed source attribution that
+\eqref{eq:adr} would have to solve. Second, the search can select physically
+impossible states: for a right-skewed, non-negative pollutant whose standardized mean
+sits near zero, a target of $-2\sigma$ can correspond to a \emph{negative physical
+mass concentration}. Formally, if $C=\mu+\sigma z$ with $\mu\lesssim 2\sigma$ (as holds
+for several species in \cref{tab:summary}), then $z=-2$ implies $C<0$. An
+``optimal policy'' that prescribes negative pollutant mass is a reductio: it exposes
+that the objective never encoded emissions, feasibility, or benefit. Optimizing a
+concentration response surface and reporting the result as a control strategy is a
+category error, independent of which optimizer is used.
+
+\subsection{Gate 4: leakage-aware evaluation}
+Finally, no skill claim survives without an autocorrelation-aware protocol. As
+\cref{tab:bench} shows, the same model and data yield $R^2$ from $0.41$ to $0.22$
+depending solely on the split. Random $k$-fold over rows of spatio-temporal telemetry
+is not a valid estimate of out-of-sample skill \citep{roberts2017cv,kaufman2012leakage};
+blocked-temporal and leave-groups-out protocols, benchmarked against persistence and
+climatology, are the minimum standard.
+
+\subsection{Recommendations}
+For researchers and regulators deploying observational environmental AI we recommend:
+(i) report blocked and grouped validation with persistence and climatology baselines,
+never a single random-split number; (ii) treat discovered graphs as hypotheses and test
+every edge against meteorological confounding and bootstrap stability before any causal
+language; (iii) verify measurement units and provenance against authoritative sensor
+metadata, not value heuristics; (iv) reserve ``source apportionment'' for receptor
+models \eqref{eq:pmf} with speciation and uncertainties; and (v) never present an
+optimizer over ambient concentrations as an emission-control recommendation without a
+validated, feasibility-constrained emissions-to-concentrations model.

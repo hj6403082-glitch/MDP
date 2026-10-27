@@ -1,0 +1,5 @@
+model,protocol,r2,rmse,mae,n
+Ridge,random-split(LEAKY),0.167,28.21,18.63,324580
+Ridge,blocked-temporal,0.082,29.32,18.78,343153
+Ridge,leave-stations-out,0.159,28.33,18.73,1081931
+DiurnalSeasonalMean(st x hr x mo),blocked-temporal,0.041,29.98,20.04,343153

@@ -1,0 +1,87 @@
+\section{Introduction}
+\label{sec:intro}
+
+Urban air pollution is among the most severe environmental health burdens in South
+Asia. Rapid urbanization and motorization across the Indo-Gangetic Plain and the
+peninsular metropolitan corridors have driven chronic and widespread exceedances of
+the National Ambient Air Quality Standards (NAAQS), with annual-mean fine particulate
+matter (PM\textsubscript{2.5}) across many Indian cities exceeding national limits by
+large multiples and the World Health Organization guideline by an order of magnitude
+\citep{guttikunda2013delhi,pant2015delhi}. The expansion of the Continuous Ambient Air
+Quality Monitoring Station (CAAQMS) network operated under the Central Pollution
+Control Board, together with open aggregation platforms such as OpenAQ \citep{openaq},
+has made hourly, multi-pollutant telemetry available at a national scale. This
+abundance of observational data has, in turn, invited an increasingly ambitious class
+of data-driven analyses that chain together three steps: \emph{prediction} of ambient
+concentrations, \emph{discovery} of a causal structure among pollutants, and
+\emph{optimization} of ``policies'' framed as pollutant reductions.
+
+\subsection{Mechanistic models versus observational learning}
+Two methodological traditions sit in tension. Chemical transport models (CTMs) encode
+the governing physics and chemistry of the atmosphere and can, in principle, answer
+genuinely interventional questions---what happens to concentrations if a given
+emission sector is curtailed. In practice their skill is bounded by bottom-up emission
+inventories that are frequently incomplete, out of date, or spatially mis-resolved,
+particularly over rapidly changing Indian source regions \citep{guttikunda2013delhi}.
+Observational machine learning inverts this trade-off: methods such as gradient-boosted
+trees \citep{chen2016xgboost} and random forests \citep{breiman2001rf} excel at fitting
+the empirical covariation of pollutants and meteorology, but they estimate
+\emph{associational response surfaces}, not mechanisms. The central methodological risk
+is that the fluency of the fit is mistaken for mechanistic or interventional content.
+
+\subsection{The ozone--\texorpdfstring{NO$_x$}{NOx} paradox}
+Nowhere is this risk sharper than for ozone. Tropospheric ozone is a secondary
+pollutant produced by the photochemical oxidation of volatile organic compounds (VOCs)
+and carbon monoxide in the presence of nitrogen oxides
+($\mathrm{NO_x}=\mathrm{NO}+\mathrm{NO_2}$) and sunlight \citep{seinfeld2016atmospheric,
+monks2015ozone}. Its production rate is a famously non-linear, non-monotone function of
+precursor concentrations. In the \emph{NO$_x$-limited} regime, typical of rural and
+background environments, ozone increases with NO$_x$; in the \emph{VOC-limited} (or
+NO$_x$-saturated) regime, typical of fresh urban emissions, additional NO$_x$
+\emph{suppresses} ozone through hydroxyl-radical (OH) scavenging and direct titration,
+$\mathrm{NO}+\mathrm{O_3}\rightarrow\mathrm{NO_2}+\mathrm{O_2}$ \citep{sillman1999}.
+Which regime holds at a given site and hour depends on the local VOC-to-NO$_x$ ratio.
+A single pooled, linear, contemporaneous model fitted across hundreds of heterogeneous
+urban stations cannot represent this regime dependence; at best it recovers a spatial
+and temporal average dominated by the urban titration signature. Any apparent
+``mechanism'' it reports is therefore constrained---and potentially confounded---before
+a single parameter is estimated, especially when VOCs are not measured at all.
+
+\subsection{The concentration--emission conflation}
+A further, and more consequential, conflation underlies the ``optimization'' step. A
+response surface relates \emph{ambient concentrations} to one another. An actual air
+quality policy acts on \emph{sectoral emissions}, which map to concentrations only
+through transport, chemistry and the diurnally varying planetary boundary layer. An
+optimizer that searches over standardized ambient concentrations and returns a vector
+such as ``set NO$_2$ to $-2\sigma$'' is not recommending an emission intervention: it
+is selecting a point on a correlational surface that may be physically unreachable,
+and whose objective values carry no policy-benefit interpretation. Treating such a
+point as a control recommendation is a category error. The distinction between
+predicting concentrations and simulating interventions is the modern, data-driven
+instance of the long-standing gap between observation and intervention formalized in
+the causal-inference literature \citep{pearl2009causality,peters2017elements}.
+
+\subsection{Contributions}
+Rather than add another over-claimed prediction-to-policy pipeline, we audit one. We
+built the complete three-stage system---clustering, prediction, causal discovery, and
+multi-objective optimization with post-hoc explanation---ran it on real national-scale
+telemetry, and then subjected every claim to adversarial, reproducible scrutiny. Our
+contributions are:
+\begin{enumerate}
+  \item \textbf{An empirical data and quality-control audit} of $204$ CAAQMS stations
+  ($1{,}180{,}551$ station-hours, 2025), including an authoritative per-sensor unit
+  verification that reveals a genuine ppb/\ugm{} unit mix for CO, NO\textsubscript{2}
+  and SO\textsubscript{2} with no per-record provenance (\cref{sec:data}).
+  \item \textbf{A leakage-safe predictive evaluation} that contrasts i.i.d.\ random
+  splitting with blocked temporal and spatial leave-stations-out protocols and a full
+  baseline ladder, quantifying how autocorrelation inflates apparent skill
+  (\cref{sec:methods,sec:results}).
+  \item \textbf{A structural-equation analysis} via DirectLiNGAM with bootstrap edge
+  stability and explicit meteorology-confounding tests, isolating the single robust,
+  chemically interpretable association (\cref{sec:results}).
+  \item \textbf{An analytical proof of the global Pareto frontier} for the fitted
+  linear surrogate (\cref{lem:pareto}), against which we benchmark the heuristic
+  NSGA-II solutions and quantify their complete dominance.
+  \item \textbf{A scientific identification gate and an open, reproducible benchmark}
+  for observational environmental AI (\cref{sec:gate,sec:conclusion}).
+\end{enumerate}

@@ -1,0 +1,87 @@
+\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------------------------
+% Observational Response Surfaces versus Interventional Policy
+% Master document. Compile with: bash compile.sh   (or: make)
+% ---------------------------------------------------------------------------
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=green!40!black,urlcolor=blue!60!black]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+\graphicspath{{figures/}}
+
+% ---- theorem environments (for the analytical Pareto derivation) ----------
+\theoremstyle{plain}
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+% ---- convenience macros ---------------------------------------------------
+\newcommand{\ugm}{\ensuremath{\mu\mathrm{g\,m^{-3}}}}
+\newcommand{\ppb}{\ensuremath{\mathrm{ppb}}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\Exp}{\mathbb{E}}
+\newcommand{\zvec}{\mathbf{z}}
+\newcommand{\bmat}{\mathbf{B}}
+\newcommand{\evec}{\mathbf{e}}
+
+\title{\bfseries Observational Response Surfaces versus Interventional Policy:\\
+A Critical Audit of Causal Discovery and Multi-Objective Optimization\\
+Across Indian Urban Air Quality Networks}
+
+\author{%
+  S.~Krishiykeishav\,$^{1}$ \and Pratyush Amit Sharma\,$^{2}$ \and
+  Shreerag Venugopalan Nair\,$^{3}$ \and Jayshil Vinodbhai Prajapati\,$^{4}$ \and
+  Ryan Vinod\,$^{5}$ \\[6pt]
+  \normalsize Vellore Institute of Technology (VIT), Vellore, Tamil Nadu, India \\[3pt]
+  \footnotesize $^{1}$26BME0561, Mech.\ Engg. \quad
+  $^{2}$26BCM0060, Chem.\ Engg. \quad
+  $^{3}$26BEC0114, ECE \\[1pt]
+  \footnotesize $^{4}$26BCE2435, CSE (Core) \quad
+  $^{5}$26BCB0026, CSE (Bioinformatics)%
+}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\input{sections/00_abstract}
+
+\input{sections/01_introduction}
+\input{sections/02_data_and_qc}
+\input{sections/03_methodology}
+\input{sections/04_results}
+\input{sections/05_identification_gate}
+\input{sections/06_conclusion}
+
+% ---- back matter ----------------------------------------------------------
+\section*{Reproducibility statement}
+All code, the committed telemetry dataset, fixed random seeds, per-phase
+manifests, and the scripts that regenerate every number, table and figure in
+this manuscript are available in the project repository on the
+\texttt{review/scientific-audit} branch. Every result is reproducible offline
+without a cluster; the audit scripts fix \texttt{SEED = 42}.
+
+\section*{Data availability}
+Ambient measurements were obtained from the OpenAQ v3 API \citep{openaq};
+meteorological reanalysis from Open-Meteo \citep{openmeteo}. Derived analysis
+artifacts are committed to the repository.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

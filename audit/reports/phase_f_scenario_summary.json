@@ -1,0 +1,21 @@
+{
+  "point_estimate_coeffs": {
+    "a_no(ozone)": -0.12425503320772578,
+    "b_no(pm25)": 0.09245019676597313,
+    "b_no2(pm25)": 0.21936470406571956,
+    "b_co(pm25)": 0.22793944920433312
+  },
+  "frontier_endpoints": {
+    "min_ozone_scenario": {
+      "z_no": 0.0,
+      "ozone": -0.0,
+      "pm25": -0.8946083065401054
+    },
+    "min_pm25_scenario": {
+      "z_no": -2.0,
+      "ozone": 0.24851006641545156,
+      "pm25": -1.0795087000720516
+    }
+  },
+  "note": "so2 and voc have zero effect; voc not fitted; -2 sigma scenarios may extrapolate beyond observed support / imply negative concentrations and are flagged as unsupported."
+}

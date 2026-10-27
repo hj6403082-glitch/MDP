@@ -250,6 +250,7 @@ class OutputConfig:
     xgb_metrics_subpath: str = "phase2/xgb_baseline_metrics"
     causal_dag_subpath: str = "phase2/causal_dag"
     causal_sem_subpath: str = "phase2/causal_sem"
+    causal_manifest_subpath: str = "phase2/causal_manifest"
 
     # Phase 3 sub-paths.
     pareto_front_subpath: str = "phase3/pareto_front"

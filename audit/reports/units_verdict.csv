@@ -1,0 +1,8 @@
+parameter,units,n_stations,stations_multi_unit,verdict,unit_consistent
+co,ppb; µg/m³,198,183,mixed (per-station duplicate sensors),False
+no,ppb,197,0,uniform,True
+no2,ppb; µg/m³,199,187,mixed (per-station duplicate sensors),False
+ozone,ppm; µg/m³,191,1,near-uniform,True
+pm10,µg/m³,194,0,uniform,True
+pm25,µg/m³,202,0,uniform,True
+so2,ppb; µg/m³,191,178,mixed (per-station duplicate sensors),False
