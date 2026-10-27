@@ -1,0 +1,48 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We audited a complete prediction-to-policy air-quality pipeline on $1{,}180{,}551$
+station-hours from $204$ Indian urban monitors and found that its most consequential
+claims do not survive scrutiny. Empirically, spatio-temporal autocorrelation inflates
+apparent predictive skill from an honest $R^2\approx0.22$--$0.30$ to a leaky $0.41$,
+and the learned model is beaten by trivial persistence for temporal gap-filling;
+pollutants add only $\Delta R^2\approx0.12$ beyond meteorology. Structurally, linear
+causal discovery recovers a single robust edge---localized NO--O\textsubscript{3}
+titration---rather than any regional photochemical mechanism, a ceiling imposed by the
+structural absence of VOCs and sharpened by a verified ppb/\ugm{} unit-provenance
+defect in three species. Algorithmically, we proved (\cref{lem:pareto}) that the true
+Pareto frontier of the fitted linear surrogate is a closed-form line segment, against
+which $100\%$ of the heuristic NSGA-II policies are dominated
+($\mathrm{GD}=0.084$, $\mathrm{HVE}=6.6\%$).
+
+Taken together these results motivate the four-part identification gate of
+\cref{sec:gate} and a deliberate reframing. Rather than an over-claimed causal
+source-apportionment and control-optimization system, the artifact is most honestly
+and usefully released as an \emph{open, leakage-safe benchmark} for multi-pollutant
+air-quality machine learning: a real national-scale dataset, a reproducible
+evaluation protocol, a baseline ladder that future methods must beat, one
+chemically interpretable hypothesis, and an explicit account of what each stronger
+claim would require. All code, data, seeds and analysis scripts are released to this
+end.
+
+\paragraph{Future work.}
+The productive path forward couples, rather than replaces, mechanism and data. We see
+three directions: (i) \emph{hybrid modelling}, in which distributed observational
+surrogates are coupled to, and constrained by, regional three-dimensional chemical
+transport models (e.g.\ WRF-Chem, CMAQ) so that interventions are simulated through
+\eqref{eq:adr} rather than fit on a correlational surface; (ii) \emph{speciation},
+through low-cost VOC and carbonaceous-aerosol sensor arrays or satellite
+HCHO/NO\textsubscript{2} proxies, to pass Gate~1 and enable genuine ozone-regime and
+receptor-model analysis; and (iii) \emph{identified causal inference}, using documented
+interventions or natural experiments with meteorological deconfounding and
+pre-registered estimands. Until an analysis passes the identification gate, the
+responsible contribution of observational environmental AI is a well-evaluated
+predictive baseline and an honest map of its own limits.
+
+\section*{Acknowledgements}
+We thank the Central Pollution Control Board and the OpenAQ and Open-Meteo projects for
+maintaining the open data infrastructure that made this audit possible.
+
+\section*{Author contributions}
+Keishav, Pratyush, Shreerag, Jayshil and Ryan jointly designed the study, implemented
+the pipeline and audit, and wrote the manuscript.

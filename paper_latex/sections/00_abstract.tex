@@ -1,0 +1,35 @@
+\begin{abstract}
+\noindent
+The uncritical application of machine learning and multi-objective optimization to
+ambient air-quality telemetry can produce spurious, policy-shaped conclusions,
+because non-linear atmospheric chemistry and strong spatio-temporal autocorrelation
+violate the assumptions on which naive pipelines rest. We audit a complete
+prediction-to-policy pipeline built on $204$ continuous ambient monitoring stations
+across urban India---$1{,}180{,}551$ station-hours of criteria pollutants
+(PM\textsubscript{2.5}, PM\textsubscript{10}, NO, NO\textsubscript{2},
+SO\textsubscript{2}, CO, O\textsubscript{3}) over calendar year 2025, merged with
+collocated Open-Meteo reanalysis meteorology---and report three findings. First,
+spatio-temporal autocorrelation inflates apparent skill under random row splitting:
+contemporaneous ozone estimation attains $R^2 \approx 0.41$ under an i.i.d.\ random
+split but only $R^2 \approx 0.25$ under a strict blocked temporal (Q4) holdout and
+$R^2 \approx 0.30$ under spatial leave-stations-out validation, while a previous-hour
+persistence baseline reaches $R^2 \approx 0.79$; pollutants contribute only
+$\Delta R^2 \approx +0.12$ beyond meteorology. Second, linear structural discovery
+(DirectLiNGAM) recovers a single bootstrap-stable, meteorology-robust edge consistent
+with \emph{localized} nitric-oxide titration ($\mathrm{NO}+\mathrm{O_3}\rightarrow
+\mathrm{NO_2}+\mathrm{O_2}$) rather than any regional photochemical-smog mechanism,
+a limitation sharpened by the structural absence of volatile organic compounds
+(VOCs) and by an authoritative unit audit showing CO, NO\textsubscript{2} and
+SO\textsubscript{2} are reported in mixed ppb/\ugm{} units with no per-record
+provenance. Third, we prove analytically that over the linear response surface the
+true Pareto frontier collapses to a one-dimensional segment, against which
+$100\%$ of the heuristic NSGA-II candidate policies are dominated (generational
+distance $=0.084$; hypervolume error $=6.6\%$). We reframe the artifact as an
+\emph{open, leakage-safe benchmark} and propose a four-part scientific
+identification gate for observational environmental AI.
+
+\medskip
+\noindent\textbf{Keywords:} air quality; data leakage; causal discovery;
+DirectLiNGAM; multi-objective optimization; Pareto dominance; source apportionment;
+reproducible benchmark; India.
+\end{abstract}

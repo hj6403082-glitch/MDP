@@ -1,0 +1,183 @@
+\section{Methodology}
+\label{sec:methods}
+
+\subsection{Governing physical dynamics}
+The ambient concentration field $C_i(\mathbf{x},t)$ of chemical species $i$ evolves
+according to the atmospheric advection--diffusion--reaction equation,
+\begin{equation}
+  \frac{\partial C_i}{\partial t}
+  = \underbrace{-\,\nabla \cdot (\mathbf{u}\, C_i)}_{\text{advection}}
+  + \underbrace{\nabla \cdot (\mathbf{K}\, \nabla C_i)}_{\text{turbulent diffusion}}
+  + \underbrace{R_i(C_1,\dots,C_m,\,T,\,h\nu)}_{\text{chemistry}}
+  + \underbrace{E_i(\mathbf{x},t)}_{\text{emissions}},
+  \label{eq:adr}
+\end{equation}
+where $\mathbf{u}(\mathbf{x},t)$ is the wind velocity field, $\mathbf{K}$ the
+(second-order) eddy-diffusivity tensor, $R_i$ the net chemical production/loss rate for
+species $i$ as a function of all $m$ reacting species, temperature $T$ and the actinic
+photon flux $h\nu$, and $E_i$ the surface emission rate. Equation~\eqref{eq:adr} makes
+the epistemic gap explicit: a single-site, contemporaneous regression of $C_i$ on the
+other $C_j$ and a few meteorological scalars discards the spatial transport operators
+entirely, linearizes the strongly non-linear reaction term $R_i$, and---critically---
+never observes the emission field $E_i$ on which policy acts. It can estimate a local,
+time-averaged \emph{response surface}, not the operator in \eqref{eq:adr}.
+
+\subsection{Predictive formulation and leakage controls}
+Let $y_{s,t}$ denote the standardized ozone concentration at station $s$ and hour $t$,
+and $\mathbf{x}_{s,t}\in\RR^{d}$ the vector of contemporaneous covariates (the other
+six pollutants and four meteorological variables). We estimate $\hat y = f(\mathbf{x})$
+with gradient-boosted regression trees \citep{chen2016xgboost}, chosen for their strong
+tabular performance under non-linear interactions and implemented within a distributed
+Apache Spark pipeline \citep{zaharia2016spark}; hyper-parameters are fixed a priori and
+never tuned on any evaluation fold.
+
+Because $y_{s,t}$ is strongly autocorrelated in both time and space, the choice of
+evaluation protocol is not a detail but the central inferential control
+\citep{kaufman2012leakage,roberts2017cv,varma2006cv}. We contrast three protocols:
+\begin{enumerate}
+  \item \emph{i.i.d.\ random split} (70/30 over rows): the standard but
+  \emph{leaky} baseline, in which near-duplicate neighbouring hours of the same station
+  appear in both train and test.
+  \item \emph{Blocked temporal holdout}: train on quarters Q1--Q3 (months 1--9),
+  evaluate on Q4 (months 10--12). Temporal blocks are never split.
+  \item \emph{Spatial leave-stations-out}: $5$-fold \texttt{GroupKFold} with the station
+  identifier as the grouping key, so that no station appears in both train and test;
+  this probes transfer to \emph{unmonitored} locations.
+\end{enumerate}
+All preprocessing (standardization, imputation) is fit on the training fold only.
+We report against a ladder of reference baselines: (i) \emph{lag-1 persistence},
+$\hat y_{s,t}=y_{s,t-1}$; (ii) a \emph{station $\times$ hour $\times$ month
+diurnal-seasonal mean}, the strongest purely climatological predictor; and (iii) an
+$L_2$-regularized \emph{Ridge} regression \citep{hastie2009esl} on the same covariates,
+as a linear reference for the boosted model. Uncertainty is quantified by a station-block bootstrap.
+
+\subsection{Covariance clustering versus bilinear receptor modelling}
+The pipeline's first stage groups species by $k$-means over their inter-species
+Pearson correlation profiles. It is essential to state precisely what this does
+\emph{not} do. Quantitative source apportionment is a bilinear receptor model; positive
+matrix factorization (PMF) \citep{paatero1994pmf} factorizes a speciated
+concentration matrix $X=[x_{ij}]$ (sample $i$, chemical species $j$) as
+\begin{equation}
+  x_{ij} = \sum_{k=1}^{p} g_{ik} f_{kj} + e_{ij},
+  \qquad g_{ik}\ge 0,\; f_{kj}\ge 0,
+  \label{eq:pmf}
+\end{equation}
+where $g_{ik}$ is the contribution of source $k$ to sample $i$, $f_{kj}$ the
+chemical profile of source $k$, and $e_{ij}$ a residual weighted by the measurement
+uncertainty $\sigma_{ij}$ through the objective
+$Q=\sum_{ij}(e_{ij}/\sigma_{ij})^2$. PMF requires (a) chemically speciated composition
+(including organic and elemental carbon and key tracers), (b) per-measurement
+uncertainties, and (c) enough species to identify $p$ non-negative factors. Our data
+provide only seven criteria pollutants, no speciation, no VOCs, and no per-measurement
+uncertainties. $k$-means over criteria-gas correlations is therefore an
+\emph{exploratory inter-species covariance clustering}, and its clusters are
+mathematically distinct from the latent source factors $\{g_{ik},f_{kj}\}$ of
+\eqref{eq:pmf}; they admit no mass-balance or source interpretation.
+
+\subsection{Causal discovery via DirectLiNGAM}
+For exploratory structure, we model the standardized pollutant vector
+$\zvec\in\RR^{m}$ as a linear, non-Gaussian, acyclic structural equation model,
+\begin{equation}
+  \zvec = \bmat\,\zvec + \evec,
+  \label{eq:sem}
+\end{equation}
+where $\bmat$ is a strictly lower-triangular (under some causal ordering) matrix of
+structural coefficients and $\evec$ is a vector of mutually independent, non-Gaussian
+exogenous disturbances. Unlike constraint-based
+discovery \citep{spirtes2000causation}, DirectLiNGAM
+\citep{shimizu2006lingam,shimizu2011directlingam} estimates a causal ordering and the
+coefficients $\bmat$ directly, exploiting non-Gaussianity to orient edges; non-linear
+generalizations exist via additive-noise models \citep{hoyer2009anm} but inherit the
+same confounding sensitivity. Its validity rests on four assumptions:
+(A1) \emph{acyclicity} of the generating graph; (A2) \emph{linearity} of the structural
+equations; (A3) \emph{non-Gaussian} disturbances with non-zero variance; and
+(A4) \emph{causal sufficiency}---no unobserved common causes of two or more observed
+variables. We encode domain knowledge as a prior-knowledge constraint matrix
+$K\in\{0,1,{-}1\}^{m\times m}$ that forbids edges from secondary pollutants
+(e.g.\ O\textsubscript{3}) into primary combustion tracers (e.g.\ NO, CO), consistent
+with emission chemistry. Edge reliability is assessed by a station-block bootstrap
+(reporting per-edge selection frequency and coefficient sign), and---decisively---by
+refitting with the meteorological variables included as exogenous nodes, which tests
+assumption (A4) against the dominant confounder.
+
+\subsection{Analytical derivation of the global Pareto frontier}
+The optimization stage searches, with the NSGA-II evolutionary algorithm
+\citep{deb2002nsga2} as implemented in the Optuna framework \citep{akiba2019optuna},
+for policies minimizing two standardized objectives built from the fitted linear
+response surface. Empirically the fitted surface is
+\begin{align}
+  z_{\mathrm{O_3}}   &= \alpha\, z_{\mathrm{NO}}, & \alpha &< 0, \label{eq:resp_o3}\\
+  z_{\mathrm{PM_{2.5}}} &= \beta_1 z_{\mathrm{NO}} + \beta_2 z_{\mathrm{NO_2}}
+                            + \beta_3 z_{\mathrm{CO}}, & \beta_1,\beta_2,\beta_3 &> 0,
+  \label{eq:resp_pm}
+\end{align}
+with fitted values $\alpha=-0.124$, $\beta_1=0.092$, $\beta_2=0.219$, $\beta_3=0.228$;
+SO\textsubscript{2} and VOC enter with zero coefficient (VOC is not a fitted variable),
+so the effective decision vector is
+$\mathbf{z}=(z_{\mathrm{NO}},z_{\mathrm{NO_2}},z_{\mathrm{CO}})$ over the search
+hypercube $z_j\in[z_{\min},z_{\max}]=[-2,0]$ (reductions only, bounded at $-2\sigma$).
+
+\begin{lemma}[Collapse of the linear Pareto front]
+\label{lem:pareto}
+Consider the bi-objective minimization of
+$\big(f_1(\mathbf{z}),f_2(\mathbf{z})\big)=\big(z_{\mathrm{O_3}},z_{\mathrm{PM_{2.5}}}\big)$
+defined by \eqref{eq:resp_o3}--\eqref{eq:resp_pm} over
+$\mathbf{z}\in[z_{\min},z_{\max}]^3$ with $\alpha<0$ and $\beta_1,\beta_2,\beta_3>0$.
+Then every Pareto-optimal point satisfies
+$z_{\mathrm{NO_2}}^{\star}=z_{\mathrm{CO}}^{\star}=z_{\min}$, and the Pareto set is the
+one-dimensional segment
+\[
+  \mathcal{P}=\Big\{\big(z_{\mathrm{NO}},z_{\min},z_{\min}\big)\;:\;
+  z_{\mathrm{NO}}\in[z_{\min},z_{\max}]\Big\},
+\]
+whose image is the line segment
+$z_{\mathrm{PM_{2.5}}} = \tfrac{\beta_1}{\alpha}\,z_{\mathrm{O_3}}
++(\beta_2+\beta_3)\,z_{\min}$.
+\end{lemma}
+
+\begin{proof}
+The objective $f_1$ depends only on $z_{\mathrm{NO}}$, while $f_2$ is strictly
+increasing in each of $z_{\mathrm{NO_2}}$ and $z_{\mathrm{CO}}$ (as $\beta_2,\beta_3>0$)
+and does not appear in $f_1$. Fix any feasible point $\mathbf{z}$ with
+$z_{\mathrm{NO_2}}>z_{\min}$. The point $\mathbf{z}'$ obtained by lowering
+$z_{\mathrm{NO_2}}$ to $z_{\min}$ (all else equal) is feasible, leaves $f_1$ unchanged,
+and strictly decreases $f_2$; hence $\mathbf{z}'$ dominates $\mathbf{z}$, so $\mathbf{z}$
+is not Pareto-optimal. The identical argument applies to $z_{\mathrm{CO}}$. Therefore
+every Pareto-optimal point has $z_{\mathrm{NO_2}}^{\star}=z_{\mathrm{CO}}^{\star}=z_{\min}$.
+
+Restricted to this face the objectives reduce to
+$f_1=\alpha z_{\mathrm{NO}}$ and
+$f_2=\beta_1 z_{\mathrm{NO}} + (\beta_2+\beta_3)z_{\min}$. Since $\alpha<0$, $f_1$ is
+strictly decreasing in $z_{\mathrm{NO}}$, whereas $f_2$ is strictly increasing in
+$z_{\mathrm{NO}}$ (as $\beta_1>0$); the two objectives are therefore in strict conflict
+along $z_{\mathrm{NO}}$, so no interior point of the segment dominates another and the
+entire segment is Pareto-optimal. Eliminating $z_{\mathrm{NO}}=f_1/\alpha$ gives
+$f_2=\tfrac{\beta_1}{\alpha}f_1+(\beta_2+\beta_3)z_{\min}$, a straight line.
+\end{proof}
+
+\begin{corollary}
+\label{cor:pareto}
+The true Pareto frontier of the fitted linear surrogate is a closed-form line segment
+computable without any metaheuristic search. Any evolutionary approximation can at best
+match it and, lacking the boundary structure of \cref{lem:pareto}, will generically
+return interior, dominated points.
+\end{corollary}
+
+\paragraph{Benchmark metrics.}
+Let $\mathcal{F}$ be a dense discretization of the exact frontier $\mathcal{P}$ and
+$A=\{\mathbf{a}_k\}_{k=1}^{n}$ the archive of heuristic solutions in objective space.
+The \emph{generational distance} is
+\begin{equation}
+  \mathrm{GD}(A)=\Big(\frac{1}{n}\sum_{k=1}^{n} d_k^{2}\Big)^{1/2},
+  \qquad d_k=\min_{\mathbf{p}\in\mathcal{F}}\lVert \mathbf{a}_k-\mathbf{p}\rVert_2 ,
+  \label{eq:gd}
+\end{equation}
+and, for a shared reference point $\mathbf{r}$ dominated by all points, the
+\emph{hypervolume error} is
+\begin{equation}
+  \mathrm{HVE}=\frac{\mathrm{HV}(\mathcal{F};\mathbf{r})-\mathrm{HV}(A;\mathbf{r})}
+  {\mathrm{HV}(\mathcal{F};\mathbf{r})},
+  \label{eq:hve}
+\end{equation}
+where $\mathrm{HV}(\cdot\,;\mathbf{r})$ is the dominated hypervolume \citep{zitzler1999hv}.
+$\mathrm{GD}=0$ and $\mathrm{HVE}=0$ iff the archive lies on the true frontier.
