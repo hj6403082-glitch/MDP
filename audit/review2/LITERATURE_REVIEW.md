@@ -21,7 +21,7 @@ grounded in SCI / Q1 literature.
 | 2024 | Malhotra et al., *Journal of Big Data* (Q1) | Systematic review of AI for air-pollution prediction | Confirms interpretability/evaluation gaps |
 | 2024 | Qi et al., *Environ. Research Letters* (Q1) | Convergent cross-mapping for PM2.5 <-> O3 causality (China) | City/season-specific; not identification |
 | 2025 | Wang et al., *Environ. Science & Ecotechnology* (Q1) | Causal forest + XAI for the 2022 ozone rebound (meteorology ~57%) | Observational; confounding only partly handled |
-| 2025 | Utku et al., *Atmosphere* (Q2/Q1) | CNN-RNN hybrid PM2.5 forecasting (India + EU cities) | Random-style evaluation; no spatial transfer test |
+| 2025 | Utku et al., *Atmosphere* (Q2) | CNN-RNN hybrid PM2.5 forecasting (India + EU cities) | Random-style evaluation; no spatial transfer test |
 | 2026 | Ye et al., *Atmos. Chem. Phys.* (Q1) | SHAP de-weathering of ozone trends (E. China) | Flags SHAP instability under multicollinearity |
 | **2026** | **This work** | **Leakage-safe India benchmark + causal-stability audit + identification gate** | — |
 
@@ -30,7 +30,7 @@ grounded in SCI / Q1 literature.
 | Year | Work (author, venue) | Contribution | Limitation it leaves |
 |------|----------------------|--------------|----------------------|
 | 2024 | Faisal (IIT Delhi, thesis) | Double-PMF / tracer-conjugate PMF of PM2.5, Delhi | Needs organic+elemental speciation |
-| 2024 | IGP winter study, *Elsevier* journal | PMF on composite PM2.5 (Lucknow 8, Kanpur 7 factors) | Site/season specific; heavy data needs |
+| 2024 | Lakra et al., *Atmos. Environ.* | PMF on composite PM2.5 (Lucknow 8, Kanpur 7 factors) | Site/season specific; heavy data needs |
 | 2024 | Nationwide airshed study, *Air* (MDPI) | Residential cooking/power/industry ~60% of India PM2.5 | Inventory-based, not receptor at scale |
 | 2025 | Pullokaran et al., *EGU25* (abstract) | Dispersion-normalised PMF across India | Conference abstract; speciation required |
 | 2025 | Lin et al., *EGUsphere* (preprint) | RF + SHAP ozone-regime mapping via HCHO/NO2 | Needs satellite/VOC proxies; associative |
@@ -89,13 +89,32 @@ for observational environmental AI.
 change yearly and by subject category.
 
 ### A. Recent, peer-reviewed SCI/Q1 (read these first — past ~2 years)
-1. Rautela & Goyal (2024), *Scientific Reports* (Q1) — deep learning for PM2.5 over India.
-2. Malhotra et al. (2024), *Journal of Big Data* (Q1) — systematic review, AI air-pollution prediction.
-3. Qi et al. (2024), *Environmental Research Letters* (Q1) — convergent cross-mapping, PM2.5/O3 causality.
-4. Wang et al. (2025), *Environmental Science and Ecotechnology* (Q1) — causal forest + XAI, ozone rebound. **Read for G2/G3.**
-5. Utku et al. (2025), *Atmosphere* — CNN-RNN hybrid PM2.5 forecasting (India).
-6. Ye et al. (2026), *Atmospheric Chemistry and Physics* (Q1) — SHAP de-weathering; multicollinearity caveat. **Read for G2.**
-7. Central IGP winter PMF study (2024), Elsevier — PMF PM2.5, Lucknow & Kanpur.
+*DOIs verified 2026-10-31 (resolve each at https://doi.org/<DOI>); quartiles are
+indicative — confirm on Scimago for the exact subject category.*
+1. Rautela, K. S. & Goyal, M. K. (2024). *Transforming air pollution management in
+   India with AI and machine learning technologies.* **Scientific Reports** 14, 20412.
+   DOI 10.1038/s41598-024-71269-7. (Q1)
+2. Malhotra, M., Walia, S., Lin, C.-C., Aulakh, I. K. & Agarwal, S. (2024).
+   *A systematic scrutiny of artificial intelligence-based air pollution prediction
+   techniques, challenges, and viable solutions.* **Journal of Big Data** 11, 142.
+   DOI 10.1186/s40537-024-01002-8. (Q1)
+3. Qi, L., Yin, J., Li, J. & Duan, X. (2024). *Detecting causal relationships between
+   fine particles and ozone based on observations in four typical cities of China.*
+   **Environmental Research Letters** 19 (Jan 2024). **DOI: confirm on IOPscience**
+   (could not be auto-resolved here; paper confirmed to exist). (Q1) **Read for G2/G3.**
+4. Wang, L., Chen, B. et al. (2025). *Causal-inference machine learning reveals the
+   drivers of China's 2022 ozone rebound.* **Environmental Science and Ecotechnology**
+   24, 100524. DOI 10.1016/j.ese.2025.100524. (Q1) **Read for G2/G3.**
+5. Utku, A. et al. (2025). *Advancing Air Quality Monitoring: Deep Learning-Based
+   CNN-RNN Hybrid Model for PM2.5 Forecasting.* **Atmosphere** 16(9), 1003.
+   DOI 10.3390/atmos16091003. (Q2)
+6. Ye, X., Zhang, L., Wang, X., Lu, N., Hickman, S., Luo, G. & Archibald, A. T. (2026).
+   *Deciphering the impacts of meteorology on surface ozone variability in eastern
+   China using explainable machine learning models.* **Atmospheric Chemistry and
+   Physics** 26(9), 6377. DOI 10.5194/acp-26-6377-2026. (Q1) **Read for G2.**
+7. Lakra, K., Shukla, T., Bhowmik, H. S. et al. (2024). *Comparative analysis of winter
+   composite-PM2.5 in Central Indo-Gangetic Plain cities.* **Atmospheric Environment**
+   338, 120827. DOI 10.1016/j.atmosenv.2024.120827. (Q1)
 
 ### B. Recent grey literature (very current; not yet peer-reviewed — cite with care)
 8. Lin et al. (2025), *EGUsphere* preprint — RF+SHAP ozone-regime mapping (HCHO/NO2).
