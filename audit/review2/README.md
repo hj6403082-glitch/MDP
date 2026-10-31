@@ -13,6 +13,7 @@ show execution and a rough draft, add pseudocode, and justify every tool.*
 | **Publication roadmap** | `PUBLICATION_PLAN.md` | the concrete path from here to a submitted paper, with the one blocking item named |
 | **Figures** | `../reports/figures/` (via `../make_figures.py`) | 6 publication figures regenerable from the committed data |
 | **Secondary-dataset decision** | `SECONDARY_DATASET_EVALUATION.md` | why a 2nd (modelled, PM-only) dataset was evaluated and not used |
+| **Literature review (2 timelines, gaps, novelty, SCI/Q1 list)** | `LITERATURE_REVIEW.md` + `MDP_Literature_Review.pdf` | "intro gaps, research paper on 2 timelines, gaps we solve, contributions & novelty, SCI/Q1 papers to read" |
 
 Supporting audit artifacts (unchanged): `audit/manuscript/` (full manuscript,
 claim-to-evidence, original-vs-corrected, bibliography, readiness), `audit/reports/`
