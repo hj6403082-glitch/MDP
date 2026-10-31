@@ -47,30 +47,28 @@ def timeline(events, title, outfile, span=None):
     print("wrote", outfile)
 
 
+# Recent work only (past ~2 years, 2024-2026) per the Review-2 instruction.
 A = [
-    (2001, "2001", "Random Forests\n(Breiman)"),
-    (2011, "2006/11", "DirectLiNGAM\n(Shimizu)"),
-    (2016, "2016", "XGBoost\n(Chen & Guestrin)"),
-    (2018, "2018", "Blocked eval\n(Oliveira)"),
-    (2020, "2020", "Spatial-CV leakage\n(Just et al.)"),
-    (2024, "2024", "Causal CCM\n(Qi et al.)"),
-    (2025, "2025", "XAI + causal\n(Wang et al.)"),
-    (2026, "2026", "This work:\nleakage-safe audit"),
+    (0, "2024", "Autoencoder PM2.5\nIndia (Rautela &\nGoyal, Sci. Rep.)"),
+    (0, "2024", "AI review\n(Malhotra,\nJ. Big Data)"),
+    (0, "2024", "Causal CCM\n(Qi et al., ERL)"),
+    (0, "2025", "Causal forest+XAI\n(Wang et al., ESE)"),
+    (0, "2025", "CNN-RNN hybrid\n(Utku, Atmosphere)"),
+    (0, "2026", "SHAP de-weathering\n(Ye et al., ACP)"),
+    (0, "2026", "This work:\nleakage-safe audit"),
 ]
 B = [
-    (1994, "1994", "PMF receptor model\n(Paatero & Tapper)"),
-    (2002, "2002", "NSGA-II\n(Deb et al.)"),
-    (2013, "2013", "Delhi inventory\n(Guttikunda)"),
-    (2015, "2015", "PM2.5 PMF Delhi\n(Pant et al.)"),
-    (2020, "2020", "Organic-aerosol PMF\n(Tobler et al.)"),
-    (2021, "2021", "NSGA-II emissions\n(Xu et al.)"),
-    (2025, "2025", "RF+SHAP regimes\n(Lin et al.)"),
-    (2026, "2026", "This work:\nanalytic Pareto proof"),
+    (0, "2024", "Double-PMF PM2.5\nDelhi (Faisal, IITD)"),
+    (0, "2024", "PMF Lucknow/Kanpur\n(IGP winter)"),
+    (0, "2024", "Airshed ~60% PM2.5\n(India, Air/MDPI)"),
+    (0, "2025", "Dispersion-norm. PMF\n(Pullokaran, EGU25)"),
+    (0, "2025", "RF+SHAP O3 regimes\n(Lin et al.)"),
+    (0, "2026", "This work: analytic\nPareto proof"),
 ]
 
 if __name__ == "__main__":
-    timeline(A, "Timeline A - Predictive & Causal ML for Air Quality",
+    timeline(A, "Timeline A - Predictive & Causal ML for Air Quality (2024-2026)",
              "fig_timeline_A.png")
-    timeline(B, "Timeline B - Source Apportionment & Multi-Objective Optimization",
+    timeline(B, "Timeline B - Source Apportionment & Optimization (2024-2026)",
              "fig_timeline_B.png")
     print("done")

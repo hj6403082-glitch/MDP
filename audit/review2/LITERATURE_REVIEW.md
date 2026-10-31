@@ -4,68 +4,62 @@ Prepared against the Review-2 checklist: *introduction gaps, research paper on a
 timeline (two timelines), the gaps we are solving, and our contributions & novelty*,
 grounded in SCI / Q1 literature.
 
-> **How to read the "two timelines":** the field our paper sits in has two parallel
-> method threads. **Timeline A** traces *predictive & causal machine learning for air
-> quality*; **Timeline B** traces *source apportionment & multi-objective policy
-> optimization*. Our work sits at the end of both and connects them. Each timeline
-> below lists, per milestone, the contribution and the limitation it leaves open; those
-> open limitations are synthesized into the research gaps in §3.
+> **Scope of the timelines:** per mam's instruction, the two timelines below show only
+> the **latest work (past ~2 years, 2024–2026)** — not the older foundational papers.
+> The field has two parallel recent threads: **Timeline A** = predictive & causal
+> machine learning for air quality; **Timeline B** = source apportionment &
+> multi-objective policy optimization. Our work sits at the end of both. (Foundational
+> method papers are listed separately under §5 as background.)
 
 ---
 
-## 1. Timeline A — Predictive & Causal ML for Air Quality
+## 1. Timeline A — Predictive & Causal ML for Air Quality (2024–2026)
 
-| Year | Milestone (author, venue) | Contribution | Limitation it leaves |
-|------|---------------------------|--------------|----------------------|
-| 2001 | Breiman, *Machine Learning* | Random forests: strong non-linear tabular prediction | Associational; no mechanism |
-| 2006/11 | Shimizu et al., *JMLR* (LiNGAM / DirectLiNGAM) | Orient causal edges from non-Gaussianity | Assumes no hidden confounders, linearity |
-| 2016 | Chen & Guestrin, *KDD* (XGBoost) | De-facto standard for tabular AQ prediction | Accuracy prioritised over interpretability |
-| 2017 | Lundberg & Lee, *NeurIPS* (SHAP) | Principled feature attributions | Explains a model, not a mechanism |
-| 2018 | Oliveira et al., *ECML-PKDD* | Dependence-aware (blocked) evaluation for spatio-temporal data | Not yet standard practice in AQ-ML |
-| 2019 | Grange & Carslaw, *Sci. Total Environ.* | Random-forest meteorological normalisation | Meteorology must be removed before attribution |
-| 2020 | Just et al., *Remote Sensing* | Shows random CV inflates PM2.5 skill vs spatial CV (RMSE 2.10 vs 3.11) | Leakage still widespread in practice |
-| 2024 | Qi et al., *Environ. Res. Lett.* | Convergent cross-mapping for PM2.5 <-> O3 causality (China) | City/season-specific; not identification |
-| 2024 | Rautela & Goyal, *Sci. Reports*; Malhotra et al., *J. Big Data* | Reviews of AI/ML for AQ (incl. India) | Confirm accuracy-first framing; few leakage-safe |
-| 2025 | Wang et al., *Environ. Sci. Ecotechnol.* | XAI + causal inference for the 2022 ozone rebound | Correlational drivers, not interventions |
-| 2026 | Ye et al., *Atmos. Chem. Phys.* | SHAP ozone-trend attribution; meteorology dominant | Flags SHAP instability under multicollinearity |
+| Year | Work (author, venue) | Contribution | Limitation it leaves |
+|------|----------------------|--------------|----------------------|
+| 2024 | Rautela & Goyal, *Scientific Reports* (Q1) | Convolutional autoencoder deriving PM2.5 across India | Accuracy-first; no causal/leakage analysis |
+| 2024 | Malhotra et al., *Journal of Big Data* (Q1) | Systematic review of AI for air-pollution prediction | Confirms interpretability/evaluation gaps |
+| 2024 | Qi et al., *Environ. Research Letters* (Q1) | Convergent cross-mapping for PM2.5 <-> O3 causality (China) | City/season-specific; not identification |
+| 2025 | Wang et al., *Environ. Science & Ecotechnology* (Q1) | Causal forest + XAI for the 2022 ozone rebound (meteorology ~57%) | Observational; confounding only partly handled |
+| 2025 | Utku et al., *Atmosphere* (Q2/Q1) | CNN-RNN hybrid PM2.5 forecasting (India + EU cities) | Random-style evaluation; no spatial transfer test |
+| 2026 | Ye et al., *Atmos. Chem. Phys.* (Q1) | SHAP de-weathering of ozone trends (E. China) | Flags SHAP instability under multicollinearity |
 | **2026** | **This work** | **Leakage-safe India benchmark + causal-stability audit + identification gate** | — |
 
-## 2. Timeline B — Source Apportionment & Multi-Objective Policy Optimization
+## 2. Timeline B — Source Apportionment & Multi-Objective Optimization (2024–2026)
 
-| Year | Milestone (author, venue) | Contribution | Limitation it leaves |
-|------|---------------------------|--------------|----------------------|
-| 1994 | Paatero & Tapper, *Environmetrics* (PMF) | Receptor modelling with error weighting | Needs speciation + per-measurement uncertainties |
-| 1999 | Zitzler & Thiele, *IEEE TEC* | Hypervolume for Pareto quality | Metric, not a guarantee of optimality |
-| 1999 | Sillman, *Atmos. Environ.* | VOC- vs NOx-limited ozone regimes | Requires VOC observations to resolve |
-| 2002 | Deb et al., *IEEE TEC* (NSGA-II) | Standard multi-objective evolutionary search | No guarantee vs exact fronts on simple surfaces |
-| 2013 | Guttikunda & Calori, *Atmos. Environ.* | 1 km Delhi emission inventory | Bottom-up inventories incomplete/dated |
-| 2015 | Pant et al., *Atmos. Environ.* | PMF PM2.5 source apportionment, Delhi | Site-specific; heavy data requirements |
-| 2015 | Monks et al., *Atmos. Chem. Phys.* | Tropospheric ozone precursor review | Confirms VOC/NOx non-linearity |
-| 2020 | Tobler et al., *Sci. Total Environ.* | Organic-aerosol PMF (ACSM), Delhi | Needs online speciation instruments |
-| 2021 | Xu et al., *E3S Web Conf.* | NSGA-II joint cost–emission optimisation | Optimises a model, not validated interventions |
-| 2025 | Lin et al. (EGUsphere); DN-PMF India (EGU25) | RF+SHAP ozone regimes via HCHO/NO2; dispersion-normalised PMF | Still require speciation/satellite proxies |
+| Year | Work (author, venue) | Contribution | Limitation it leaves |
+|------|----------------------|--------------|----------------------|
+| 2024 | Faisal (IIT Delhi, thesis) | Double-PMF / tracer-conjugate PMF of PM2.5, Delhi | Needs organic+elemental speciation |
+| 2024 | IGP winter study, *Elsevier* journal | PMF on composite PM2.5 (Lucknow 8, Kanpur 7 factors) | Site/season specific; heavy data needs |
+| 2024 | Nationwide airshed study, *Air* (MDPI) | Residential cooking/power/industry ~60% of India PM2.5 | Inventory-based, not receptor at scale |
+| 2025 | Pullokaran et al., *EGU25* (abstract) | Dispersion-normalised PMF across India | Conference abstract; speciation required |
+| 2025 | Lin et al., *EGUsphere* (preprint) | RF + SHAP ozone-regime mapping via HCHO/NO2 | Needs satellite/VOC proxies; associative |
 | **2026** | **This work** | **Analytic Pareto proof: 100% NSGA-II dominance; concentration–emission fallacy** | — |
+
+> **Note on the optimization half of Timeline B:** rigorous, recent (2024–2025)
+> *multi-objective optimization for air-quality policy* is scarce — the nearest applied
+> work (e.g. a 2023 CNN-LSTM + multi-objective emission model over Xi'an stations) is
+> already outside the two-year window and does not benchmark against an exact frontier.
+> That scarcity is itself part of the gap our analytical Pareto result addresses.
 
 ---
 
-## 3. Research Gaps (what the field leaves open — and we address)
+## 3. Research Gaps (what the recent literature leaves open — and we address)
 
-Synthesised from the open limitations in both timelines:
-
-- **G1 — Leakage-unaware evaluation.** Air-quality ML routinely reports random-split
-  skill, which overstates generalisation on autocorrelated data
-  (Just et al. 2020; Oliveira et al. 2018).
-- **G2 — Correlation read as mechanism.** Feature importance / SHAP and discovered
-  graphs are interpreted causally without confounding or identifiability tests; SHAP
-  itself is unstable under multicollinearity (Ye et al. 2026).
+- **G1 — Leakage-unaware evaluation.** Recent AQ-ML (e.g. forecasting papers in §1)
+  still report random-style skill on autocorrelated data, overstating generalisation.
+- **G2 — Correlation read as mechanism.** SHAP/importance and discovered graphs are
+  read causally; even 2026 work (Ye et al.) flags SHAP instability under
+  multicollinearity, yet attribution is still treated as explanation.
 - **G3 — Untested meteorological / boundary-layer confounding.** Causal graphs among
-  pollutants rarely test whether edges survive meteorology (the dominant confounder).
+  pollutants rarely test whether edges survive meteorology (the dominant confounder);
+  recent causal work (Wang et al. 2025) targets this but only partially.
 - **G4 — Clustering mislabelled as source apportionment.** Correlation clustering is
   presented as apportionment despite lacking the speciation and uncertainties that PMF
-  requires (Paatero & Tapper 1994).
+  (and its 2024–25 dispersion-normalised variants) require.
 - **G5 — Concentration–emission conflation.** "Policy optimisation" acts on ambient
   concentrations, not emissions, and metaheuristics are not benchmarked against exact /
-  analytic Pareto fronts.
+  analytic Pareto fronts — a near-absent practice in the recent literature.
 - **G6 — Weak provenance QC and no open India benchmark.** Measurement-unit provenance
   is seldom audited, and there is no open, leakage-safe, reproducible multi-pollutant
   benchmark for the Indian network.
@@ -77,7 +71,7 @@ Synthesised from the open limitations in both timelines:
 | C1 | Leakage-safe, multi-protocol evaluation (random vs blocked-temporal vs leave-stations-out) with a full baseline ladder, on 204 Indian stations / 1.18M station-hours | G1 | First India-scale, leakage-safe multi-pollutant benchmark |
 | C2 | Causal-discovery with bootstrap edge stability **and** an explicit meteorology-confounding test; only NO -> O3 survives | G2, G3 | Couples stability + confounding testing rather than reporting a raw graph |
 | C3 | Formal distinction (and proof) that k-means correlation clustering is **not** PMF source apportionment | G4 | Makes the clustering/apportionment boundary explicit and testable |
-| C4 | Analytical proof that the linear surrogate's Pareto front collapses to a 1-D segment; 100% of NSGA-II policies dominated (GD $=0.084$, HVE $=6.6\%$) | G5 | First closed-form optimality audit of a heuristic AQ optimiser |
+| C4 | Analytical proof that the linear surrogate's Pareto front collapses to a 1-D segment; 100% of NSGA-II policies dominated (GD = 0.084, HVE = 6.6%) | G5 | First closed-form optimality audit of a heuristic AQ optimiser |
 | C5 | Formalised **concentration–emission fallacy** (negative-mass reductio) | G5 | Names a common category error in data-driven AQ policy |
 | C6 | Authoritative unit-provenance audit (ppb/µg·m⁻³ mix) + open reproducible benchmark + a 4-part **scientific identification gate** | G2–G6 | A reusable gate for observational environmental AI |
 
@@ -91,43 +85,40 @@ for observational environmental AI.
 
 ## 5. SCI / Q1 Reading List
 
-Priority papers to read, grouped by thread. Quartiles are indicative of the journal's
-standing; **confirm the current quartile on Scimago (SJR) or JCR** before citing, as
-rankings change yearly.
+**Confirm the current quartile on Scimago (SJR) or JCR before citing** — rankings
+change yearly and by subject category.
 
-### Core methods (SCI / Q1)
-1. Paatero & Tapper (1994), *Environmetrics* (Q1) — PMF foundation. DOI 10.1002/env.3170050203
-2. Deb et al. (2002), *IEEE Trans. Evolutionary Computation* (Q1) — NSGA-II. DOI 10.1109/4235.996017
-3. Shimizu et al. (2011), *J. Machine Learning Research* (Q1) — DirectLiNGAM.
-4. Lundberg & Lee (2017), *NeurIPS* (A*; Lundberg et al. 2020, *Nature Machine Intelligence*, Q1) — SHAP.
-5. Chen & Guestrin (2016), *KDD* (A*) — XGBoost.
+### A. Recent, peer-reviewed SCI/Q1 (read these first — past ~2 years)
+1. Rautela & Goyal (2024), *Scientific Reports* (Q1) — deep learning for PM2.5 over India.
+2. Malhotra et al. (2024), *Journal of Big Data* (Q1) — systematic review, AI air-pollution prediction.
+3. Qi et al. (2024), *Environmental Research Letters* (Q1) — convergent cross-mapping, PM2.5/O3 causality.
+4. Wang et al. (2025), *Environmental Science and Ecotechnology* (Q1) — causal forest + XAI, ozone rebound. **Read for G2/G3.**
+5. Utku et al. (2025), *Atmosphere* — CNN-RNN hybrid PM2.5 forecasting (India).
+6. Ye et al. (2026), *Atmospheric Chemistry and Physics* (Q1) — SHAP de-weathering; multicollinearity caveat. **Read for G2.**
+7. Central IGP winter PMF study (2024), Elsevier — PMF PM2.5, Lucknow & Kanpur.
 
-### Leakage & evaluation (SCI / Q1)
-6. Just et al. (2020), *Remote Sensing* (Q1) — spatial CV vs leakage in PM2.5 ML. **Read first for G1.**
-7. Roberts et al. (2017), *Ecography* (Q1) — blocked CV for spatial/temporal data. DOI 10.1111/ecog.02881
-8. Grange & Carslaw (2019), *Science of the Total Environment* (Q1) — meteorological normalisation. DOI 10.1016/j.scitotenv.2018.10.344
+### B. Recent grey literature (very current; not yet peer-reviewed — cite with care)
+8. Lin et al. (2025), *EGUsphere* preprint — RF+SHAP ozone-regime mapping (HCHO/NO2).
+9. Pullokaran et al. (2025), *EGU25* abstract — dispersion-normalised PMF across India.
+10. Faisal (2024), IIT Delhi thesis — double-PMF / tracer-conjugate PMF, Delhi.
 
-### Causal / explainable AQ (SCI / Q1) — recent
-9. Qi et al. (2024), *Environmental Research Letters* (Q1) — convergent cross-mapping, PM2.5/ozone causality.
-10. Wang et al. (2025), *Environmental Science and Ecotechnology* (Q1) — XAI + causal inference, ozone rebound.
-11. Ye et al. (2026), *Atmospheric Chemistry and Physics* (Q1) — SHAP ozone attribution; multicollinearity caveat. **Read for G2.**
-12. Rautela & Goyal (2024), *Scientific Reports* (Q1) — AI/ML for air pollution management in India.
-13. Chernozhukov et al. (2018), *The Econometrics Journal* (Q1) — double/debiased ML (deconfounding).
-
-### Atmospheric chemistry & India context (SCI / Q1)
-14. Monks et al. (2015), *Atmospheric Chemistry and Physics* (Q1) — tropospheric ozone precursors.
-15. Sillman (1999), *Atmospheric Environment* (Q1) — VOC- vs NOx-limited ozone. DOI 10.1016/S1352-2310(98)00345-8
-16. Pant et al. (2015), *Atmospheric Environment* (Q1) — Delhi PM2.5 PMF apportionment.
-17. Guttikunda & Calori (2013), *Atmospheric Environment* (Q1) — Delhi emission inventory. DOI 10.1016/j.atmosenv.2012.10.040
-18. Seinfeld & Pandis (2016), *Atmospheric Chemistry and Physics* (Wiley, textbook) — reference chemistry.
+### C. Foundational methods (background — cite for method definitions, not as "recent")
+11. Paatero & Tapper (1994), *Environmetrics* (Q1) — PMF. DOI 10.1002/env.3170050203
+12. Deb et al. (2002), *IEEE Trans. Evolutionary Computation* (Q1) — NSGA-II. DOI 10.1109/4235.996017
+13. Shimizu et al. (2011), *J. Machine Learning Research* (Q1) — DirectLiNGAM.
+14. Lundberg & Lee (2017), *NeurIPS*; Lundberg et al. (2020), *Nature Machine Intelligence* (Q1) — SHAP.
+15. Just et al. (2020), *Remote Sensing* (Q1) — spatial CV vs leakage in PM2.5 ML. **Read for G1.**
+16. Grange & Carslaw (2019), *Sci. Total Environment* (Q1) — meteorological normalisation.
+17. Sillman (1999), *Atmospheric Environment* (Q1) — VOC- vs NOx-limited ozone.
+18. Seinfeld & Pandis (2016), textbook (Wiley) — reference atmospheric chemistry.
 
 ### How to split the reading (5 students)
-- **G1 / evaluation:** #6, #7, #8
-- **Causal & XAI:** #9, #10, #11, #13
-- **Apportionment / PMF:** #1, #16, #17
-- **Optimisation:** #2, and one applied NSGA-II emission paper (e.g. Xu et al. 2021, *E3S*)
-- **Chemistry / India context:** #14, #15, #18
+- **Member 1 — recent prediction/DL:** #1, #2, #5
+- **Member 2 — recent causal & XAI:** #3, #4, #6, #8
+- **Member 3 — recent apportionment/PMF:** #7, #9, #10, #11
+- **Member 4 — leakage & evaluation:** #15, #16
+- **Member 5 — optimization & chemistry:** #12, #17, and one recent applied optimization paper
 
-Each reader: note the paper's method, its evaluation protocol, and which of our gaps
-(G1–G6) it supports or challenges — that mapping is exactly what strengthens our
+Each reader: note the paper's method, its **evaluation protocol**, and which of our
+gaps (G1–G6) it supports or challenges — that mapping is exactly what strengthens our
 Introduction.
