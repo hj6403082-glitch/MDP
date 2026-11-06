@@ -1,0 +1,10 @@
+{
+  "blocked_weather_only": 0.14,
+  "blocked_weather_UC": 0.21,
+  "blocked_weather_all": 0.253,
+  "lso_weather_UC": 0.266,
+  "lso_weather_all": 0.271,
+  "incremental_UC_beyond_weather": 0.07,
+  "incremental_ALL_beyond_weather": 0.113,
+  "delta_from_dropping_indeterminate": 0.043
+}

@@ -72,6 +72,39 @@ of the explainable ozone variance is meteorological, and the chemical covariates
 small, though non-trivial, increment. Any downstream ``mechanistic'' reading must
 account for the fact that meteorology, not chemistry, carries the bulk of the signal.
 
+\subsection{Robustness to the unit-indeterminate species}
+\label{sec:robust}
+Because CO, NO\textsubscript{2} and SO\textsubscript{2} are unit-indeterminate
+(\cref{sec:units}), we re-ran the leakage-safe estimation using \emph{only} the
+unit-consistent pollutants (NO, PM\textsubscript{2.5}, PM\textsubscript{10}, plus
+meteorology), dropping the three mixed species entirely (\cref{tab:robust}). The
+conclusions are unchanged. Under the blocked temporal protocol, weather plus the
+unit-consistent pollutants attains $R^2=0.210$ versus $0.253$ for the full model---a
+difference of only $0.043$---and under leave-stations-out the two are within $0.005$
+($0.266$ vs.\ $0.271$). The incremental pollutant signal beyond meteorology remains
+small either way ($+0.07$ unit-consistent, $+0.11$ all species). The headline---modest
+honest skill, dominated by meteorology---therefore does not depend on the species whose
+units cannot be verified. The single stable causal edge, NO\,$\rightarrow$\,O\textsubscript{3}
+(\cref{sec:results}), likewise involves only unit-consistent variables (NO in ppb,
+O\textsubscript{3} in \ugm{}) and is unaffected by construction.
+
+\begin{table}[t]
+  \centering
+  \caption{Robustness of ozone estimation to dropping the unit-indeterminate species
+  (CO, NO\textsubscript{2}, SO\textsubscript{2}). Held-out $R^2$; XGBoost; preprocessing
+  fit on train only.}
+  \label{tab:robust}
+  \begin{tabular}{lcc}
+    \toprule
+    Feature set & Blocked temporal & Leave-stations-out \\
+    \midrule
+    Weather only                                   & 0.140 & 0.214 \\
+    Weather $+$ unit-consistent (NO, PM\textsubscript{2.5}, PM\textsubscript{10}) & 0.210 & 0.266 \\
+    Weather $+$ all pollutants                     & 0.253 & 0.271 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \subsection{Recovered structure and its atmospheric interpretation}
 The bootstrap-stabilized DirectLiNGAM structure is shown in \cref{fig:dag}. Of all
 candidate edges, exactly one is both bootstrap-stable (selection frequency $1.0$) and
@@ -113,7 +146,11 @@ $\mathrm{HVE}=6.6\%$ \eqref{eq:hve}. The heuristic fails precisely as
 \cref{cor:pareto} anticipates: unaware of the boundary structure, NSGA-II scatters
 interior points rather than driving the reducible coordinates to their bound. For a
 linear surrogate, the metaheuristic is not merely unnecessary---it is strictly inferior
-to a closed-form solution that any analyst can write down.
+to a closed-form solution that any analyst can write down. We stress that this linearity
+is not a restriction we imposed: it is the response surface the audited pipeline itself
+fitted and optimised over, so the dominance is a property of the deployed system, not of
+a straw-man model. The general lesson is that any optimiser should be checked against an
+exact or analytic baseline whenever the fitted surrogate admits one.
 
 \begin{table}[t]
   \centering

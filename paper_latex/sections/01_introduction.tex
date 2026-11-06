@@ -61,6 +61,29 @@ predicting concentrations and simulating interventions is the modern, data-drive
 instance of the long-standing gap between observation and intervention formalized in
 the causal-inference literature \citep{pearl2009causality,peters2017elements}.
 
+\subsection{Related work}
+Recent air-quality machine learning has advanced rapidly on prediction while, we
+argue, under-addressing evaluation and causal rigour. On the predictive side,
+deep-learning architectures now dominate: convolutional autoencoders reconstruct
+PM\textsubscript{2.5} fields over India \citep{rautela2024}, and hybrid CNN--RNN models
+report strong short-horizon skill \citep{utku2025}; recent systematic reviews confirm
+that this literature ``prioritizes accuracy over interpretability''
+\citep{malhotra2024}. Crucially, most such studies still evaluate with random splits of
+autocorrelated data; \citet{just2020} demonstrated, for satellite-based
+PM\textsubscript{2.5}, that spatial cross-validation withholding nearby sites yields
+substantially higher (honest) error than conventional random splitting---the precise
+leakage we quantify here. On the causal and explainable side, convergent cross-mapping
+\citep{qi2024} and causal-forest/XAI hybrids \citep{wang2025} have begun to probe
+PM\textsubscript{2.5}--ozone and ozone-rebound drivers, consistently finding meteorology
+dominant; and SHAP-based ``de-weathering'' of ozone trends \citep{ye2026} explicitly
+flags that attribution is unstable under multicollinearity. On source apportionment,
+receptor modelling continues to require chemical speciation and uncertainties that
+criteria-pollutant telemetry lacks \citep{lakra2024,paatero1994pmf}. Our work is
+complementary and corrective: we apply these same method families but foreground the
+diagnostics they usually omit---leakage-safe protocols, bootstrap edge stability,
+explicit meteorological de-confounding, an exact-versus-heuristic optimality check, and
+an authoritative unit-provenance audit---and package the result as an open benchmark.
+
 \subsection{Contributions}
 Rather than add another over-claimed prediction-to-policy pipeline, we audit one. We
 built the complete three-stage system---clustering, prediction, causal discovery, and

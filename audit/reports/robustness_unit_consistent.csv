@@ -1,0 +1,7 @@
+features,protocol,r2,rmse,n
+weather only,blocked-temporal,0.14,28.38,343153
+weather only,leave-stations-out,0.214,27.38,1081931
+"weather + UC pollutants (NO,PM2.5,PM10)",blocked-temporal,0.21,27.21,343153
+"weather + UC pollutants (NO,PM2.5,PM10)",leave-stations-out,0.266,26.45,1081931
+weather + ALL pollutants,blocked-temporal,0.253,26.45,343153
+weather + ALL pollutants,leave-stations-out,0.271,26.37,1081931

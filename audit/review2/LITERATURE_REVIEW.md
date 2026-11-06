@@ -126,7 +126,7 @@ indicative — confirm on Scimago for the exact subject category.*
 12. Deb et al. (2002), *IEEE Trans. Evolutionary Computation* (Q1) — NSGA-II. DOI 10.1109/4235.996017
 13. Shimizu et al. (2011), *J. Machine Learning Research* (Q1) — DirectLiNGAM.
 14. Lundberg & Lee (2017), *NeurIPS*; Lundberg et al. (2020), *Nature Machine Intelligence* (Q1) — SHAP.
-15. Just et al. (2020), *Remote Sensing* (Q1) — spatial CV vs leakage in PM2.5 ML. **Read for G1.**
+15. Just et al. (2020), *Atmospheric Environment* 239:117649 (Q1) — spatial CV vs leakage in PM2.5 ML. DOI 10.1016/j.atmosenv.2020.117649. **Read for G1.**
 16. Grange & Carslaw (2019), *Sci. Total Environment* (Q1) — meteorological normalisation.
 17. Sillman (1999), *Atmospheric Environment* (Q1) — VOC- vs NOx-limited ozone.
 18. Seinfeld & Pandis (2016), textbook (Wiley) — reference atmospheric chemistry.
